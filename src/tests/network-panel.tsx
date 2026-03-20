@@ -9,10 +9,27 @@ import SpeedTest from '@cloudflare/speedtest'
 interface SpeedResult {
   latencyMs: number | null
   jitterMs: number | null
-  packetLoss: number | null
   downloadMbps: number | null
   uploadMbps: number | null
 }
+
+// Default measurements from @cloudflare/speedtest minus packetLoss (requires TURN server)
+const MEASUREMENTS = [
+  { type: 'latency' as const, numPackets: 1 },
+  { type: 'download' as const, bytes: 1e5, count: 1, bypassMinDuration: true },
+  { type: 'latency' as const, numPackets: 20 },
+  { type: 'download' as const, bytes: 1e5, count: 9 },
+  { type: 'download' as const, bytes: 1e6, count: 8 },
+  { type: 'upload' as const, bytes: 1e5, count: 8 },
+  { type: 'upload' as const, bytes: 1e6, count: 6 },
+  { type: 'download' as const, bytes: 1e7, count: 6 },
+  { type: 'upload' as const, bytes: 1e7, count: 4 },
+  { type: 'download' as const, bytes: 2.5e7, count: 4 },
+  { type: 'upload' as const, bytes: 2.5e7, count: 4 },
+  { type: 'download' as const, bytes: 1e8, count: 3 },
+  { type: 'upload' as const, bytes: 5e7, count: 3 },
+  { type: 'download' as const, bytes: 2.5e8, count: 2 },
+]
 
 type Phase = 'idle' | 'running' | 'done'
 
@@ -34,12 +51,6 @@ function speedColor(mbps: number) {
   return 'text-status-bad'
 }
 
-function lossColor(pct: number) {
-  if (pct === 0) return 'text-status-good'
-  if (pct <= 2) return 'text-status-warn'
-  return 'text-status-bad'
-}
-
 function gaugeOffset(mbps: number): number {
   const pct = Math.min(mbps / 500, 1)
   const circumference = 2 * Math.PI * 45
@@ -53,18 +64,18 @@ function bpsToMbps(bps: number): number {
 export default function NetworkPanel({ onResult }: { onResult?: (name: string, status: 'pass' | 'fail' | 'warn' | 'skipped' | 'not run', detail: string) => void }) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [result, setResult] = useState<SpeedResult>({
-    latencyMs: null, jitterMs: null, packetLoss: null,
+    latencyMs: null, jitterMs: null,
     downloadMbps: null, uploadMbps: null,
   })
   const [error, setError] = useState<string | null>(null)
   const engineRef = useRef<SpeedTest | null>(null)
 
   const start = useCallback(() => {
-    setResult({ latencyMs: null, jitterMs: null, packetLoss: null, downloadMbps: null, uploadMbps: null })
+    setResult({ latencyMs: null, jitterMs: null, downloadMbps: null, uploadMbps: null })
     setError(null)
     setPhase('running')
 
-    const engine = new SpeedTest({ autoStart: false })
+    const engine = new SpeedTest({ autoStart: false, measurements: MEASUREMENTS })
     engineRef.current = engine
 
     engine.onResultsChange = () => {
@@ -74,7 +85,6 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
         uploadMbps: s.upload ? bpsToMbps(s.upload) : null,
         latencyMs: s.latency ? Math.round(s.latency) : null,
         jitterMs: s.jitter ? Math.round(s.jitter * 10) / 10 : null,
-        packetLoss: s.packetLoss != null ? Math.round(s.packetLoss * 100 * 10) / 10 : null,
       })
     }
 
@@ -84,12 +94,11 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
       const ul = s.upload ? bpsToMbps(s.upload) : 0
       const lat = s.latency ? Math.round(s.latency) : 0
       const jit = s.jitter ? Math.round(s.jitter * 10) / 10 : 0
-      const loss = s.packetLoss != null ? Math.round(s.packetLoss * 100 * 10) / 10 : 0
 
-      setResult({ downloadMbps: dl, uploadMbps: ul, latencyMs: lat, jitterMs: jit, packetLoss: loss })
+      setResult({ downloadMbps: dl, uploadMbps: ul, latencyMs: lat, jitterMs: jit })
       setPhase('done')
       onResult?.('Network Speed', 'pass',
-        `Down: ${dl} Mbps | Up: ${ul} Mbps | Ping: ${lat}ms | Jitter: ${jit}ms | Loss: ${loss}%`)
+        `Down: ${dl} Mbps | Up: ${ul} Mbps | Ping: ${lat}ms | Jitter: ${jit}ms`)
       engineRef.current = null
     }
 
@@ -109,7 +118,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
 
   const handleGaugeClick = () => {
     if (canStart) start()
-    else if (canRetest) { setPhase('idle'); setResult({ latencyMs: null, jitterMs: null, packetLoss: null, downloadMbps: null, uploadMbps: null }); setError(null) }
+    else if (canRetest) { setPhase('idle'); setResult({ latencyMs: null, jitterMs: null, downloadMbps: null, uploadMbps: null }); setError(null) }
   }
 
   return (
@@ -156,8 +165,8 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
       {error && <span className="text-[10px] font-mono text-status-bad text-center">{error}</span>}
 
       {/* Stats grid below gauge */}
-      {(result.uploadMbps != null || result.latencyMs != null || result.jitterMs != null || result.packetLoss != null) && (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 w-full text-[10px] px-1">
+      {(result.uploadMbps != null || result.latencyMs != null || result.jitterMs != null) && (
+        <div className="grid grid-cols-3 gap-x-3 w-full text-[10px] px-1">
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-gray-500 font-medium tracking-wide">Upload</span>
             <span className={`font-bold font-mono ${result.uploadMbps != null ? speedColor(result.uploadMbps) : 'text-gray-200'}`}>
@@ -176,19 +185,13 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
               {result.jitterMs != null ? `${result.jitterMs}ms` : '—'}
             </span>
           </div>
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-gray-500 font-medium tracking-wide">Loss</span>
-            <span className={`font-bold font-mono ${result.packetLoss != null ? lossColor(result.packetLoss) : 'text-gray-200'}`}>
-              {result.packetLoss != null ? `${result.packetLoss}%` : '—'}
-            </span>
-          </div>
         </div>
       )}
 
       {/* Retest link after results */}
       {canRetest && hasDownload && (
         <button
-          onClick={() => { setPhase('idle'); setResult({ latencyMs: null, jitterMs: null, packetLoss: null, downloadMbps: null, uploadMbps: null }); setError(null) }}
+          onClick={() => { setPhase('idle'); setResult({ latencyMs: null, jitterMs: null, downloadMbps: null, uploadMbps: null }); setError(null) }}
           className="text-[10px] font-mono text-gray-500 hover:text-[#40E0D0] transition-colors"
         >
           Retest
