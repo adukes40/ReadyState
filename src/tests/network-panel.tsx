@@ -1,12 +1,14 @@
 /**
  * Network Speed Test panel — compact sidebar version.
- * Clickable circular gauge, stats below.
+ * Multi-round testing with download (primary), upload, latency, jitter, and packet loss.
  */
 
 import { useState, useEffect } from 'react'
 
 interface SpeedResult {
   latencyMs: number
+  jitterMs: number
+  packetLoss: number
   downloadMbps: number
   uploadMbps: number
 }
@@ -15,15 +17,27 @@ type Phase = 'idle' | 'latency' | 'download' | 'upload' | 'done'
 
 const PHASE_LABELS: Record<Phase, string> = {
   idle: '',
-  latency: 'Latency…',
-  download: 'Download…',
-  upload: 'Upload…',
+  latency: 'Measuring latency…',
+  download: 'Testing download…',
+  upload: 'Testing upload…',
   done: '',
 }
+
+const PING_ROUNDS = 20
+const DOWNLOAD_ROUNDS = 4
+const DOWNLOAD_SIZE = 5_000_000
+const UPLOAD_SIZE = 2_000_000
+const UPLOAD_ROUNDS = 4
 
 function latencyColor(ms: number) {
   if (ms <= 50) return 'text-status-good'
   if (ms <= 150) return 'text-status-warn'
+  return 'text-status-bad'
+}
+
+function jitterColor(ms: number) {
+  if (ms <= 5) return 'text-status-good'
+  if (ms <= 20) return 'text-status-warn'
   return 'text-status-bad'
 }
 
@@ -33,15 +47,28 @@ function speedColor(mbps: number) {
   return 'text-status-bad'
 }
 
+function lossColor(pct: number) {
+  if (pct === 0) return 'text-status-good'
+  if (pct <= 2) return 'text-status-warn'
+  return 'text-status-bad'
+}
+
 function gaugeOffset(mbps: number): number {
   const pct = Math.min(mbps / 500, 1)
   const circumference = 2 * Math.PI * 45
   return circumference - circumference * pct
 }
 
+function fillRandom(buf: Uint8Array) {
+  for (let offset = 0; offset < buf.byteLength; offset += 65536) {
+    crypto.getRandomValues(buf.subarray(offset, offset + Math.min(65536, buf.byteLength - offset)))
+  }
+}
+
 export default function NetworkPanel({ onResult }: { onResult?: (name: string, status: 'pass' | 'fail' | 'warn' | 'skipped' | 'not run', detail: string) => void }) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [result, setResult] = useState<Partial<SpeedResult>>({})
+  const [progress, setProgress] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const start = async () => {
@@ -51,35 +78,80 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
     const endpoint = '/api/speed-test'
 
     try {
+      // --- Latency & Jitter (multiple pings) ---
       setPhase('latency')
-      const latStart = performance.now()
-      await fetch(`${endpoint}?ping=1`, { cache: 'no-store' })
-      const latencyMs = Math.round(performance.now() - latStart)
-      setResult((r) => ({ ...r, latencyMs }))
+      const latencies: number[] = []
+      let failures = 0
 
+      for (let i = 0; i < PING_ROUNDS; i++) {
+        setProgress(`${i + 1}/${PING_ROUNDS}`)
+        try {
+          const t0 = performance.now()
+          await fetch(`${endpoint}?ping=1`, { cache: 'no-store' })
+          latencies.push(performance.now() - t0)
+        } catch {
+          failures++
+        }
+      }
+
+      const packetLoss = Math.round((failures / PING_ROUNDS) * 100 * 10) / 10
+      setResult((r) => ({ ...r, packetLoss }))
+
+      if (latencies.length > 0) {
+        const avgLatency = Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+        // Jitter = mean absolute deviation between consecutive pings
+        let jitterSum = 0
+        for (let i = 1; i < latencies.length; i++) {
+          jitterSum += Math.abs(latencies[i] - latencies[i - 1])
+        }
+        const jitterMs = latencies.length > 1
+          ? Math.round((jitterSum / (latencies.length - 1)) * 10) / 10
+          : 0
+        setResult((r) => ({ ...r, latencyMs: avgLatency, jitterMs }))
+      }
+
+      // --- Download (multiple rounds, averaged) ---
       setPhase('download')
-      const dlStart = performance.now()
-      const dlRes = await fetch(`${endpoint}?size=5000000`, { cache: 'no-store' })
-      const dlBlob = await dlRes.blob()
-      const dlTime = (performance.now() - dlStart) / 1000
-      const downloadMbps = Math.round((dlBlob.size * 8) / (dlTime * 1_000_000) * 10) / 10
+      let totalDlBytes = 0
+      let totalDlTime = 0
+
+      for (let i = 0; i < DOWNLOAD_ROUNDS; i++) {
+        setProgress(`${i + 1}/${DOWNLOAD_ROUNDS}`)
+        const dlStart = performance.now()
+        const dlRes = await fetch(`${endpoint}?size=${DOWNLOAD_SIZE}`, { cache: 'no-store' })
+        const dlBlob = await dlRes.blob()
+        totalDlTime += (performance.now() - dlStart) / 1000
+        totalDlBytes += dlBlob.size
+      }
+
+      const downloadMbps = Math.round((totalDlBytes * 8) / (totalDlTime * 1_000_000) * 10) / 10
       setResult((r) => ({ ...r, downloadMbps }))
 
+      // --- Upload (multiple rounds, averaged) ---
       setPhase('upload')
-      const payload = new Uint8Array(2_000_000)
-      for (let offset = 0; offset < payload.byteLength; offset += 65536) {
-        crypto.getRandomValues(payload.subarray(offset, offset + Math.min(65536, payload.byteLength - offset)))
+      const payload = new Uint8Array(UPLOAD_SIZE)
+      fillRandom(payload)
+
+      let totalUlBytes = 0
+      let totalUlTime = 0
+
+      for (let i = 0; i < UPLOAD_ROUNDS; i++) {
+        setProgress(`${i + 1}/${UPLOAD_ROUNDS}`)
+        const ulStart = performance.now()
+        await fetch(endpoint, { method: 'POST', body: payload })
+        totalUlTime += (performance.now() - ulStart) / 1000
+        totalUlBytes += payload.byteLength
       }
-      const ulStart = performance.now()
-      await fetch(endpoint, { method: 'POST', body: payload })
-      const ulTime = (performance.now() - ulStart) / 1000
-      const uploadMbps = Math.round((payload.byteLength * 8) / (ulTime * 1_000_000) * 10) / 10
+
+      const uploadMbps = Math.round((totalUlBytes * 8) / (totalUlTime * 1_000_000) * 10) / 10
       setResult((r) => ({ ...r, uploadMbps }))
 
       setPhase('done')
+      setProgress('')
     } catch (e) {
       setError(String(e))
       setPhase('done')
+      setProgress('')
     }
   }
 
@@ -88,10 +160,11 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
       if (error) {
         onResult?.('Network Speed', 'fail', error)
       } else if (result.downloadMbps != null && result.uploadMbps != null && result.latencyMs != null) {
-        onResult?.('Network Speed', 'pass', `Down: ${result.downloadMbps} Mbps, Up: ${result.uploadMbps} Mbps, Latency: ${result.latencyMs}ms`)
+        onResult?.('Network Speed', 'pass',
+          `Down: ${result.downloadMbps} Mbps | Up: ${result.uploadMbps} Mbps | Ping: ${result.latencyMs}ms | Jitter: ${result.jitterMs}ms | Loss: ${result.packetLoss}%`)
       }
     }
-  }, [phase, error, result.downloadMbps, result.uploadMbps, result.latencyMs, onResult])
+  }, [phase, error, result.downloadMbps, result.uploadMbps, result.latencyMs, result.jitterMs, result.packetLoss, onResult])
 
   const running = phase !== 'idle' && phase !== 'done'
   const hasResults = result.downloadMbps != null
@@ -105,7 +178,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
 
   return (
     <div className="flex flex-col items-center gap-3">
-      {/* Clickable gauge */}
+      {/* Clickable gauge — primary download speed */}
       <div
         className={`relative w-28 h-28 ${canStart || canRetest ? 'cursor-pointer' : ''}`}
         onClick={handleGaugeClick}
@@ -128,11 +201,13 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
           {running && (
             <>
               <span className="text-[10px] text-gray-400 font-medium">{PHASE_LABELS[phase]}</span>
+              <span className="text-[9px] text-gray-500 font-mono mt-0.5">{progress}</span>
               <div className="w-2 h-2 rounded-full bg-[#40E0D0] animate-pulse-dot mt-1" />
             </>
           )}
-          {hasResults && (
+          {hasResults && !running && (
             <>
+              <span className="text-[9px] text-gray-500 font-medium uppercase tracking-widest">Download</span>
               <span className="text-2xl font-bold font-mono font-tabular tracking-tight text-white">{result.downloadMbps}</span>
               <span className="text-[10px] text-gray-400 font-medium">Mbps</span>
             </>
@@ -148,19 +223,31 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
 
       {error && <span className="text-[10px] font-mono text-status-bad text-center">{error}</span>}
 
-      {/* Stats below gauge */}
+      {/* Stats grid below gauge */}
       {Object.keys(result).length > 0 && (
-        <div className="flex justify-between w-full text-[10px] px-1">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 w-full text-[10px] px-1">
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-gray-500 font-medium tracking-wide">Upload</span>
             <span className={`font-bold font-mono ${result.uploadMbps != null ? speedColor(result.uploadMbps) : 'text-gray-200'}`}>
-              {result.uploadMbps != null ? `${result.uploadMbps}` : '—'}
+              {result.uploadMbps != null ? `${result.uploadMbps} Mbps` : '—'}
             </span>
           </div>
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-gray-500 font-medium tracking-wide">Latency</span>
             <span className={`font-bold font-mono ${result.latencyMs != null ? latencyColor(result.latencyMs) : 'text-gray-200'}`}>
               {result.latencyMs != null ? `${result.latencyMs}ms` : '—'}
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-gray-500 font-medium tracking-wide">Jitter</span>
+            <span className={`font-bold font-mono ${result.jitterMs != null ? jitterColor(result.jitterMs) : 'text-gray-200'}`}>
+              {result.jitterMs != null ? `${result.jitterMs}ms` : '—'}
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-gray-500 font-medium tracking-wide">Loss</span>
+            <span className={`font-bold font-mono ${result.packetLoss != null ? lossColor(result.packetLoss) : 'text-gray-200'}`}>
+              {result.packetLoss != null ? `${result.packetLoss}%` : '—'}
             </span>
           </div>
         </div>
