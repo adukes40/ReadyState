@@ -24,10 +24,11 @@ const PHASE_LABELS: Record<Phase, string> = {
 }
 
 const PING_ROUNDS = 20
-const DOWNLOAD_ROUNDS = 4
-const DOWNLOAD_SIZE = 5_000_000
-const UPLOAD_SIZE = 2_000_000
-const UPLOAD_ROUNDS = 4
+const DOWNLOAD_DURATION = 8_000  // ms — keep downloading for 8 seconds
+const DOWNLOAD_SIZE = 10_000_000 // 10MB per request
+const UPLOAD_DURATION = 6_000    // ms — keep uploading for 6 seconds
+const UPLOAD_SIZE = 2_000_000    // 2MB per request
+const CONCURRENT_STREAMS = 4     // parallel connections
 
 function latencyColor(ms: number) {
   if (ms <= 50) return 'text-status-good'
@@ -110,47 +111,65 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
         setResult((r) => ({ ...r, latencyMs: avgLatency, jitterMs }))
       }
 
-      // --- Download (multiple rounds, stream-read for accurate timing) ---
+      // --- Download (time-based, parallel streams) ---
       setPhase('download')
-      let totalDlBytes = 0
-      let totalDlTime = 0
-
-      for (let i = 0; i < DOWNLOAD_ROUNDS; i++) {
-        setProgress(`${i + 1}/${DOWNLOAD_ROUNDS}`)
-        const dlRes = await fetch(`${endpoint}?size=${DOWNLOAD_SIZE}`, { cache: 'no-store' })
-        const reader = dlRes.body!.getReader()
+      {
+        let totalBytes = 0
         const dlStart = performance.now()
-        let roundBytes = 0
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          roundBytes += value.byteLength
+        let running = true
+        setTimeout(() => { running = false }, DOWNLOAD_DURATION)
+
+        // Each stream fetches continuously until time runs out
+        const streamDownload = async () => {
+          while (running) {
+            try {
+              const res = await fetch(`${endpoint}?size=${DOWNLOAD_SIZE}`, { cache: 'no-store' })
+              const reader = res.body!.getReader()
+              while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+                totalBytes += value.byteLength
+                const elapsed = Math.round((performance.now() - dlStart) / 1000)
+                setProgress(`${elapsed}s`)
+                if (!running) { reader.cancel(); break }
+              }
+            } catch { /* ignore individual failures */ }
+          }
         }
-        totalDlTime += (performance.now() - dlStart) / 1000
-        totalDlBytes += roundBytes
+
+        await Promise.all(Array.from({ length: CONCURRENT_STREAMS }, () => streamDownload()))
+        const dlTime = (performance.now() - dlStart) / 1000
+        const downloadMbps = Math.round((totalBytes * 8) / (dlTime * 1_000_000) * 10) / 10
+        setResult((r) => ({ ...r, downloadMbps }))
       }
 
-      const downloadMbps = Math.round((totalDlBytes * 8) / (totalDlTime * 1_000_000) * 10) / 10
-      setResult((r) => ({ ...r, downloadMbps }))
-
-      // --- Upload (multiple rounds, averaged) ---
+      // --- Upload (time-based, parallel streams) ---
       setPhase('upload')
-      const payload = new Uint8Array(UPLOAD_SIZE)
-      fillRandom(payload)
+      {
+        const payload = new Uint8Array(UPLOAD_SIZE)
+        fillRandom(payload)
 
-      let totalUlBytes = 0
-      let totalUlTime = 0
-
-      for (let i = 0; i < UPLOAD_ROUNDS; i++) {
-        setProgress(`${i + 1}/${UPLOAD_ROUNDS}`)
+        let totalBytes = 0
         const ulStart = performance.now()
-        await fetch(endpoint, { method: 'POST', body: payload })
-        totalUlTime += (performance.now() - ulStart) / 1000
-        totalUlBytes += payload.byteLength
-      }
+        let running = true
+        setTimeout(() => { running = false }, UPLOAD_DURATION)
 
-      const uploadMbps = Math.round((totalUlBytes * 8) / (totalUlTime * 1_000_000) * 10) / 10
-      setResult((r) => ({ ...r, uploadMbps }))
+        const streamUpload = async () => {
+          while (running) {
+            try {
+              await fetch(endpoint, { method: 'POST', body: payload })
+              totalBytes += payload.byteLength
+              const elapsed = Math.round((performance.now() - ulStart) / 1000)
+              setProgress(`${elapsed}s`)
+            } catch { /* ignore individual failures */ }
+          }
+        }
+
+        await Promise.all(Array.from({ length: CONCURRENT_STREAMS }, () => streamUpload()))
+        const ulTime = (performance.now() - ulStart) / 1000
+        const uploadMbps = Math.round((totalBytes * 8) / (ulTime * 1_000_000) * 10) / 10
+        setResult((r) => ({ ...r, uploadMbps }))
+      }
 
       setPhase('done')
       setProgress('')
