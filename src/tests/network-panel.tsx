@@ -67,7 +67,9 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
 
       setPhase('upload')
       const payload = new Uint8Array(2_000_000)
-      crypto.getRandomValues(payload)
+      for (let offset = 0; offset < payload.byteLength; offset += 65536) {
+        crypto.getRandomValues(payload.subarray(offset, offset + Math.min(65536, payload.byteLength - offset)))
+      }
       const ulStart = performance.now()
       await fetch(endpoint, { method: 'POST', body: payload })
       const ulTime = (performance.now() - ulStart) / 1000

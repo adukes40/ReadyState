@@ -24,7 +24,9 @@ export async function runSpeedTest(endpoint: string): Promise<SpeedResult> {
 
   // Upload — POST a blob
   const uploadData = new Uint8Array(2_000_000)
-  crypto.getRandomValues(uploadData)
+  for (let offset = 0; offset < uploadData.byteLength; offset += 65536) {
+    crypto.getRandomValues(uploadData.subarray(offset, offset + Math.min(65536, uploadData.byteLength - offset)))
+  }
   const ulStart = performance.now()
   await fetch(endpoint, { method: 'POST', body: uploadData, cache: 'no-store' })
   const ulTime = (performance.now() - ulStart) / 1000
