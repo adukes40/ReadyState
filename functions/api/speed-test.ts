@@ -36,7 +36,11 @@ export const onRequest: PagesFunction = async ({ request }) => {
   const size = parseInt(url.searchParams.get('size') ?? '1000000', 10)
   const clampedSize = Math.min(size, 10_000_000) // Cap at 10MB
   const payload = new Uint8Array(clampedSize)
-  crypto.getRandomValues(payload)
+  // crypto.getRandomValues() is limited to 65536 bytes per call
+  for (let offset = 0; offset < clampedSize; offset += 65536) {
+    const chunk = Math.min(65536, clampedSize - offset)
+    crypto.getRandomValues(payload.subarray(offset, offset + chunk))
+  }
 
   return new Response(payload, {
     headers: {
