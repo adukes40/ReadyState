@@ -51,9 +51,10 @@ function speedColor(mbps: number) {
   return 'text-status-bad'
 }
 
-function gaugeOffset(mbps: number): number {
-  const pct = Math.min(mbps / 500, 1)
+function gaugeOffset(mbps: number, complete: boolean): number {
   const circumference = 2 * Math.PI * 45
+  if (complete) return 0 // full ring
+  const pct = Math.min(mbps / 500, 0.9) // cap at 90% while running
   return circumference - circumference * pct
 }
 
@@ -137,7 +138,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
             strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 45}`}
-            strokeDashoffset={hasDownload ? gaugeOffset(result.downloadMbps!) : 2 * Math.PI * 45}
+            strokeDashoffset={hasDownload ? gaugeOffset(result.downloadMbps!, phase === 'done') : 2 * Math.PI * 45}
             className="transition-all duration-1000"
             style={hasDownload ? { filter: 'drop-shadow(0 0 10px rgba(64,224,208,0.8))' } : undefined}
           />
