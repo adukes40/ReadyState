@@ -81,7 +81,7 @@ export default function App() {
         <div className="mt-auto pt-4">
           <button
             onClick={() => setShowPrivacy(true)}
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-[#40E0D0] hover:border-[#40E0D0] transition-colors w-full justify-center border border-[#40E0D0]/30 rounded-full px-4 py-2"
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-[#40E0D0] hover:border-[#40E0D0] transition-colors w-full justify-center border-2 border-[#40E0D0]/50 rounded-full px-4 py-2"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
