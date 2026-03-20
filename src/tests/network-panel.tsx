@@ -3,7 +3,7 @@
  * Uses @cloudflare/speedtest for accurate measurements against Cloudflare's edge.
  */
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import SpeedTest from '@cloudflare/speedtest'
 
 interface SpeedResult {
@@ -31,6 +31,12 @@ const MEASUREMENTS = [
   { type: 'download' as const, bytes: 2.5e8, count: 2 },
 ]
 
+// Total individual requests across all measurement steps
+const TOTAL_REQUESTS = MEASUREMENTS.reduce((sum, m) => {
+  if (m.type === 'latency') return sum + (m.numPackets ?? 1)
+  return sum + (m.count ?? 1)
+}, 0)
+
 type Phase = 'idle' | 'running' | 'done'
 
 function latencyColor(ms: number) {
@@ -51,12 +57,7 @@ function speedColor(mbps: number) {
   return 'text-status-bad'
 }
 
-function gaugeOffset(mbps: number, complete: boolean): number {
-  const circumference = 2 * Math.PI * 45
-  if (complete) return 0 // full ring
-  const pct = Math.min(mbps / 500, 0.9) // cap at 90% while running
-  return circumference - circumference * pct
-}
+const CIRCUMFERENCE = 2 * Math.PI * 45
 
 function bpsToMbps(bps: number): number {
   return Math.round((bps / 1_000_000) * 10) / 10
@@ -68,18 +69,65 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
     latencyMs: null, jitterMs: null,
     downloadMbps: null, uploadMbps: null,
   })
+  const [ringProgress, setRingProgress] = useState(0) // 0 to 1
   const [error, setError] = useState<string | null>(null)
   const engineRef = useRef<SpeedTest | null>(null)
+  const changeCountRef = useRef(0)
+
+  // Smooth the ring with CSS transition — but also interpolate between
+  // measurement events with a timer so the ring doesn't stall.
+  const interpolationRef = useRef<number | null>(null)
+  const targetProgressRef = useRef(0)
+  const currentProgressRef = useRef(0)
+
+  const startInterpolation = useCallback(() => {
+    if (interpolationRef.current != null) return
+    const tick = () => {
+      const target = targetProgressRef.current
+      const current = currentProgressRef.current
+      if (current < target) {
+        // Ease toward target
+        const next = current + (target - current) * 0.08
+        currentProgressRef.current = next
+        setRingProgress(next)
+      }
+      interpolationRef.current = requestAnimationFrame(tick)
+    }
+    interpolationRef.current = requestAnimationFrame(tick)
+  }, [])
+
+  const stopInterpolation = useCallback(() => {
+    if (interpolationRef.current != null) {
+      cancelAnimationFrame(interpolationRef.current)
+      interpolationRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => stopInterpolation()
+  }, [stopInterpolation])
 
   const start = useCallback(() => {
     setResult({ latencyMs: null, jitterMs: null, downloadMbps: null, uploadMbps: null })
     setError(null)
     setPhase('running')
+    setRingProgress(0)
+    changeCountRef.current = 0
+    targetProgressRef.current = 0
+    currentProgressRef.current = 0
 
     const engine = new SpeedTest({ autoStart: false, measurements: MEASUREMENTS })
     engineRef.current = engine
 
+    startInterpolation()
+
     engine.onResultsChange = () => {
+      changeCountRef.current++
+      // Each onResultsChange roughly corresponds to one completed request.
+      // Cap at 95% — the final 5% fills on completion.
+      const pct = Math.min(changeCountRef.current / TOTAL_REQUESTS, 0.95)
+      targetProgressRef.current = pct
+
       const s = engine.results.getSummary()
       setResult({
         downloadMbps: s.download ? bpsToMbps(s.download) : null,
@@ -90,6 +138,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
     }
 
     engine.onFinish = () => {
+      stopInterpolation()
       const s = engine.results.getSummary()
       const dl = s.download ? bpsToMbps(s.download) : 0
       const ul = s.upload ? bpsToMbps(s.upload) : 0
@@ -97,6 +146,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
       const jit = s.jitter ? Math.round(s.jitter * 10) / 10 : 0
 
       setResult({ downloadMbps: dl, uploadMbps: ul, latencyMs: lat, jitterMs: jit })
+      setRingProgress(1)
       setPhase('done')
       onResult?.('Network Speed', 'pass',
         `Down: ${dl} Mbps | Up: ${ul} Mbps | Ping: ${lat}ms | Jitter: ${jit}ms`)
@@ -104,6 +154,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
     }
 
     engine.onError = (err) => {
+      stopInterpolation()
       setError(String(err))
       setPhase('done')
       onResult?.('Network Speed', 'fail', String(err))
@@ -111,7 +162,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
     }
 
     engine.play()
-  }, [onResult])
+  }, [onResult, startInterpolation, stopInterpolation])
 
   const hasDownload = result.downloadMbps != null
   const canStart = phase === 'idle'
@@ -119,8 +170,16 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
 
   const handleGaugeClick = () => {
     if (canStart) start()
-    else if (canRetest) { setPhase('idle'); setResult({ latencyMs: null, jitterMs: null, downloadMbps: null, uploadMbps: null }); setError(null) }
+    else if (canRetest) {
+      setPhase('idle')
+      setResult({ latencyMs: null, jitterMs: null, downloadMbps: null, uploadMbps: null })
+      setRingProgress(0)
+      setError(null)
+    }
   }
+
+  const dashOffset = CIRCUMFERENCE - CIRCUMFERENCE * ringProgress
+  const ringColor = ringProgress > 0 ? '#40E0D0' : 'rgba(255,255,255,0.08)'
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -134,13 +193,13 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
           <circle
             cx="50" cy="50" r="45"
             fill="none"
-            stroke={hasDownload ? '#40E0D0' : 'rgba(255,255,255,0.08)'}
+            stroke={ringColor}
             strokeWidth="6"
             strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 45}`}
-            strokeDashoffset={hasDownload ? gaugeOffset(result.downloadMbps!, phase === 'done') : 2 * Math.PI * 45}
-            className="transition-all duration-1000"
-            style={hasDownload ? { filter: 'drop-shadow(0 0 10px rgba(64,224,208,0.8))' } : undefined}
+            strokeDasharray={`${CIRCUMFERENCE}`}
+            strokeDashoffset={dashOffset}
+            className={phase === 'done' ? 'transition-all duration-700' : ''}
+            style={ringProgress > 0 ? { filter: 'drop-shadow(0 0 10px rgba(64,224,208,0.8))' } : undefined}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -192,7 +251,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
       {/* Retest link after results */}
       {canRetest && hasDownload && (
         <button
-          onClick={() => { setPhase('idle'); setResult({ latencyMs: null, jitterMs: null, downloadMbps: null, uploadMbps: null }); setError(null) }}
+          onClick={() => { setPhase('idle'); setResult({ latencyMs: null, jitterMs: null, downloadMbps: null, uploadMbps: null }); setRingProgress(0); setError(null) }}
           className="text-[10px] font-mono text-gray-500 hover:text-[#40E0D0] transition-colors"
         >
           Retest
