@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens for ReadyState Diagnostics
+ * Aesthetic: Stitch — dark sci-fi instrument panel, cyan accents
+ * Typography: Geist + Geist Mono
+ */
+
+html {
+  color-scheme: dark;
+}
+
+@theme {
+  /* Dark surfaces — stitch palette */
+  --color-surface-base: #0a0a0a;
+  --color-surface-card: #141414;
+  --color-surface-inset: #0f0f0f;
+  --color-surface-hover: #1a1a1a;
+  --color-surface-raised: #1a1a1a;
+  --color-surface-input: #1a1a1a;
+
+  /* Sidebar / nav surfaces */
+  --color-surface-navy: #141414;
+  --color-surface-navy-mid: #1a1a1a;
+
+  /* Section accent colors — each test group has its own */
+  --color-cat-device: #40E0D0;
+  --color-cat-input: #40E0D0;
+  --color-cat-stress: #40E0D0;
+  --color-cat-hardware: #40E0D0;
+
+  /* Primary action — cyan/turquoise */
+  --color-accent-primary: #40E0D0;
+  --color-accent-hover: #33B3A6;
+  --color-accent-muted: rgba(64, 224, 208, 0.10);
+  --color-accent-glow: rgba(64, 224, 208, 0.30);
+
+  /* Signal colors */
+  --color-status-good: #10B981;
+  --color-status-warn: #FBBF24;
+  --color-status-bad: #EF4444;
+  --color-status-info: #40E0D0;
+  --color-status-current: #10B981;
+  --color-status-behind: #FBBF24;
+  --color-status-eol: #EF4444;
+
+  /* Text */
+  --color-text-primary: #E8EAED;
+  --color-text-secondary: #9BA1B0;
+  --color-text-muted: #5F6578;
+  --color-text-on-dark: #F3F4F6;
+  --color-text-on-accent: #0a0a0a;
+
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.05);
+  --color-border-strong: rgba(255, 255, 255, 0.10);
+
+  /* Key colors */
+  --color-key-bg: rgba(255, 255, 255, 0.05);
+  --color-key-border: rgba(255, 255, 255, 0.10);
+  --color-key-pressed: #40E0D0;
+  --color-key-tested: #40E0D0;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Fonts */
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
+}
+
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cyan glow utilities */
+.glow-logo {
+  box-shadow: 0 0 20px rgba(64, 224, 208, 0.4), 0 0 60px rgba(64, 224, 208, 0.15);
+}
+.glow-active {
+  box-shadow: inset 3px 0 12px -4px rgba(64, 224, 208, 0.3);
+}
+.glow-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(64, 224, 208, 0.04);
+}
+.glow-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(64, 224, 208, 0.12), 0 0 20px -4px rgba(64, 224, 208, 0.08);
+}
+.glow-readout {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 40px -8px rgba(64, 224, 208, 0.15), inset 0 1px 0 rgba(64, 224, 208, 0.06);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fadeUp 0.4s ease-out both;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scaleIn 0.35s ease-out both;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out both;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 20px rgba(64, 224, 208, 0.4), 0 0 60px rgba(64, 224, 208, 0.15); }
+  50% { box-shadow: 0 0 24px rgba(64, 224, 208, 0.55), 0 0 80px rgba(64, 224, 208, 0.2); }
+}
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 40px -8px rgba(64, 224, 208, 0.15), inset 0 1px 0 rgba(64, 224, 208, 0.06);
+  }
+  50% {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 50px -8px rgba(64, 224, 208, 0.22), inset 0 1px 0 rgba(64, 224, 208, 0.1);
+  }
+}
+.animate-shimmer {
+  animation: shimmer 4s ease-in-out infinite;
+}
