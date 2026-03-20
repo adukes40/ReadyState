@@ -110,18 +110,24 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
         setResult((r) => ({ ...r, latencyMs: avgLatency, jitterMs }))
       }
 
-      // --- Download (multiple rounds, averaged) ---
+      // --- Download (multiple rounds, stream-read for accurate timing) ---
       setPhase('download')
       let totalDlBytes = 0
       let totalDlTime = 0
 
       for (let i = 0; i < DOWNLOAD_ROUNDS; i++) {
         setProgress(`${i + 1}/${DOWNLOAD_ROUNDS}`)
-        const dlStart = performance.now()
         const dlRes = await fetch(`${endpoint}?size=${DOWNLOAD_SIZE}`, { cache: 'no-store' })
-        const dlBlob = await dlRes.blob()
+        const reader = dlRes.body!.getReader()
+        const dlStart = performance.now()
+        let roundBytes = 0
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          roundBytes += value.byteLength
+        }
         totalDlTime += (performance.now() - dlStart) / 1000
-        totalDlBytes += dlBlob.size
+        totalDlBytes += roundBytes
       }
 
       const downloadMbps = Math.round((totalDlBytes * 8) / (totalDlTime * 1_000_000) * 10) / 10

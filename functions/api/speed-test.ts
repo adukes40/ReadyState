@@ -1,7 +1,7 @@
 /**
  * Speed Test Worker — download/upload payload endpoint.
  * GET ?ping=1 → empty response for latency measurement
- * GET ?size=N → random blob of N bytes for download test
+ * GET ?size=N → streamed blob of N bytes for download test
  * POST → accept upload payload, return byte count
  */
 
@@ -35,16 +35,31 @@ export const onRequest: PagesFunction = async ({ request }) => {
 
   const size = parseInt(url.searchParams.get('size') ?? '1000000', 10)
   const clampedSize = Math.min(size, 10_000_000) // Cap at 10MB
-  const payload = new Uint8Array(clampedSize)
-  // crypto.getRandomValues() is limited to 65536 bytes per call
-  for (let offset = 0; offset < clampedSize; offset += 65536) {
-    const chunk = Math.min(65536, clampedSize - offset)
-    crypto.getRandomValues(payload.subarray(offset, offset + chunk))
-  }
 
-  return new Response(payload, {
+  // Use a small pre-generated chunk repeated via a stream.
+  // This avoids the slow crypto.getRandomValues loop on the edge.
+  const CHUNK_SIZE = 16384
+  const chunk = new Uint8Array(CHUNK_SIZE)
+  crypto.getRandomValues(chunk)
+
+  let bytesSent = 0
+  const stream = new ReadableStream({
+    pull(controller) {
+      const remaining = clampedSize - bytesSent
+      if (remaining <= 0) {
+        controller.close()
+        return
+      }
+      const toSend = Math.min(CHUNK_SIZE, remaining)
+      controller.enqueue(toSend === CHUNK_SIZE ? chunk : chunk.slice(0, toSend))
+      bytesSent += toSend
+    },
+  })
+
+  return new Response(stream, {
     headers: {
       'Content-Type': 'application/octet-stream',
+      'Content-Length': String(clampedSize),
       'Access-Control-Allow-Origin': '*',
       'Cache-Control': 'no-store',
     },
