@@ -23,6 +23,7 @@
     "wrangler": "^4.75.0"
   },
   "dependencies": {
+    "@cloudflare/speedtest": "^1.7.0",
     "d3": "^7.9.0",
     "framer-motion": "^12.38.0",
     "jspdf": "^4.2.1",
