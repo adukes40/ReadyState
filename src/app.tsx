@@ -136,7 +136,7 @@ export default function App() {
       )}
 
       {/* Desktop sidebar */}
-      <nav className="hidden md:flex w-64 flex-shrink-0 flex-col bg-[#141414] rounded-3xl m-4 mr-0 p-4 border border-white/5 relative overflow-y-auto overflow-x-hidden sticky top-4 h-[calc(100vh-2rem)] scrollbar-hide">
+      <nav className="hidden md:flex sidebar-width flex-shrink-0 flex-col bg-[#141414] rounded-3xl m-4 mr-0 p-4 border border-white/5 relative overflow-y-auto overflow-x-hidden sticky top-4 h-[calc(100vh-2rem)] scrollbar-hide">
         {sidebarContent}
       </nav>
 

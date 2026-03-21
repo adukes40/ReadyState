@@ -16,39 +16,124 @@ ReadyState was designed on a 32" widescreen. On a Chromebook (1366×768 at 100% 
 
 ## Approach
 
-### 1. Height-Responsive Layout
+### 1. Section Spacing (`tokens.css` + `test-runner.tsx`)
 
-Extend the existing `@media (min-height: 900px)` pattern already in `tokens.css` with a complementary `@media (max-height: 800px)` block that tightens spacing when the viewport is short (targets 1366×768 Chromebook at 100% zoom — usable height ~668px).
+Define a CSS class `sections-gap` in `tokens.css` that uses margin-top on direct children — the same mechanism Tailwind's `space-y-*` uses:
 
-**`tokens.css` additions:**
-- New CSS class `sidebar-width`: `width: 13rem` (208px / w-52) by default, `width: 16rem` (256px / w-64) at `min-height: 801px`
-- New CSS class `content-section-gap`: `gap: 1rem` at max-height: 800px, inherits `space-y` otherwise (handled via Tailwind class swap in test-runner.tsx)
-- New CSS class `panel-compact`: reduces panel padding to `0.75rem` at max-height: 800px
-- New CSS class `readout-icon-compact`: reduces ReadoutCard icon from `w-10 h-10` to `w-8 h-8` at max-height: 800px
+```css
+/* Compact on short screens (Chromebook 768px), generous on tall screens */
+.sections-gap > * + * { margin-top: 1rem; }
 
-**`app.tsx` changes:**
-- Desktop sidebar `nav`: replace hardcoded `w-64` with `sidebar-width` class
+@media (min-height: 801px) {
+  .sections-gap > * + * { margin-top: 2rem; }
+}
+```
 
-**`test-runner.tsx` changes:**
-- Outer wrapper `space-y-8` → `space-y-4 lg-h:space-y-8` via a CSS class `sections-gap` defined in tokens.css
-- `Panel` component: add `panel-compact` class alongside existing padding classes
-- `Panel` header: `mb-4` → `mb-2 compact-h:mb-4` via tokens.css rule on `.panel-compact h3`
-- `ReadoutCard`: add `readout-icon-compact` class to icon wrapper; `p-4` → handled by `panel-compact` rule on parent
+In `test-runner.tsx`, replace the outer wrapper's `space-y-8` with `sections-gap`. Do not keep `space-y-8` alongside it — `sections-gap` fully replaces it.
 
-### 2. Sidebar Width
+### 2. Panel Compaction (`tokens.css` + `test-runner.tsx`)
 
-The sidebar already uses height-responsive token classes (`sidebar-gauge`, `sidebar-battery`, `sidebar-brand`, etc.) that fire below 900px. Content fits in ~464px against ~636px available sidebar height at 768px — no vertical changes needed.
+Define a CSS class `panel-compact` in `tokens.css`:
 
-Only the width changes:
-- `sidebar-width` CSS class: `16rem` (256px) by default, `13rem` (208px) at `max-height: 800px`
-- Applied to the desktop `nav` element in `app.tsx`
-- Mobile drawer is unaffected (it uses `w-72 max-w-[85vw]` and is width-breakpoint-controlled)
+```css
+.panel-compact {
+  padding: 0.75rem;
+}
 
-### 3. Dropdown Theming
+@media (min-height: 801px) {
+  .panel-compact {
+    padding: 1.25rem;
+  }
+}
 
-Native `<select>` and `<option>` elements ignore most CSS on their dropdown panel. In Chrome/Chromium (the only browser target for Chromebook), `background-color` and `color` on `option` elements are respected.
+/* h3 header margin — rule has higher specificity than Tailwind utility via explicit selector */
+.panel-compact > h3 {
+  margin-bottom: 0.5rem;
+}
 
-**`tokens.css` additions:**
+@media (min-height: 801px) {
+  .panel-compact > h3 {
+    margin-bottom: 1rem;
+  }
+}
+```
+
+In `test-runner.tsx`, the `Panel` component:
+- Replace `p-4 md:p-5` with `panel-compact` on the `<section>` element
+- Remove `mb-4` from the `h3` className — the `.panel-compact > h3` CSS rule handles it instead
+
+### 3. ReadoutCard Icon (`tokens.css` + `test-runner.tsx`)
+
+Define a CSS class `readout-icon` in `tokens.css`:
+
+```css
+.readout-icon {
+  width: 2rem;    /* w-8 — compact */
+  height: 2rem;
+}
+
+@media (min-height: 801px) {
+  .readout-icon {
+    width: 2.5rem;  /* w-10 — full size */
+    height: 2.5rem;
+  }
+}
+```
+
+In `test-runner.tsx`, the `ReadoutCard` component's icon wrapper div:
+- Remove `w-10 h-10` from the className
+- Add `readout-icon` class in their place
+
+The `rounded-xl bg-white/5 flex items-center justify-center border border-white/10 flex-shrink-0` classes remain unchanged.
+
+Also add a compact grid gap to the System Readout grid in `tokens.css`:
+
+```css
+.readout-grid {
+  gap: 0.5rem;
+}
+
+@media (min-height: 801px) {
+  .readout-grid {
+    gap: 0.75rem;
+  }
+}
+```
+
+In `test-runner.tsx`, replace `gap-3` on the readout `<div className="grid ...">` with `readout-grid`.
+
+### 4. Sidebar Width (`tokens.css` + `app.tsx`)
+
+Define a CSS class `sidebar-width` in `tokens.css`:
+
+```css
+/* Default (short screens ≤800px, or any height): narrow */
+.sidebar-width {
+  width: 13rem;   /* 208px — w-52 */
+}
+
+/* Tall screens (>800px): full width */
+@media (min-height: 801px) {
+  .sidebar-width {
+    width: 16rem;   /* 256px — w-64 */
+  }
+}
+```
+
+**Breakpoint rationale:** `min-height: 801px` is intentional — it draws the line immediately above the 800px threshold. On a 1366×768 Chromebook at 100% zoom the CSS viewport height is ~668px (768px minus ~100px browser chrome), so only the narrow `13rem` applies. On 900px+ screens the wide `16rem` applies, matching current behavior.
+
+The desktop sidebar `nav` in `app.tsx` (line 139):
+- Remove `w-64`
+- Add `sidebar-width`
+
+The mobile drawer is unaffected — it uses `w-72 max-w-[85vw]` controlled by the `md:hidden` breakpoint.
+
+The sidebar content (gauge, battery, brand spacing) already adapts via the existing `min-height: 900px` token classes — no height changes needed. Height estimate at 768px: ~464px content in ~636px sidebar → comfortable fit without scrolling.
+
+### 5. Dropdown Theming (`tokens.css`)
+
+Add global rules for native `<select>` elements. Chrome/Chromium (the Chromebook browser) respects `background-color` and `color` on `<option>` elements:
+
 ```css
 select {
   background-color: #141414;
@@ -61,29 +146,29 @@ select option {
 }
 ```
 
-This is a global rule — covers all four dropdowns (keyboard layout, CPU duration, GPU duration, Tab Swarm preset) without touching individual component files.
+This is a global rule — covers all four dropdowns (keyboard layout, CPU duration, GPU duration, Tab Swarm preset) without modifying individual component files.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/styles/tokens.css` | Add `@media (max-height: 800px)` block with `sidebar-width`, `sections-gap`, `panel-compact`, `readout-icon-compact` classes; add global `select`/`option` dark theme rules |
-| `src/app.tsx` | Sidebar `nav`: replace `w-64` with `sidebar-width` class |
-| `src/pages/test-runner.tsx` | Outer wrapper: add `sections-gap` class; `Panel`: add `panel-compact`; `ReadoutCard`: add `readout-icon-compact` on icon div |
+| `src/styles/tokens.css` | Add CSS classes: `sections-gap`, `panel-compact`, `readout-icon`, `readout-grid`, `sidebar-width`; add global `select`/`option` dark theme rules |
+| `src/app.tsx` | Sidebar `nav`: remove `w-64`, add `sidebar-width` |
+| `src/pages/test-runner.tsx` | Outer wrapper: replace `space-y-8` with `sections-gap`; `Panel` `<section>`: replace `p-4 md:p-5` with `panel-compact`, remove `mb-4` from `h3`; `ReadoutCard` icon div: remove `w-10 h-10`, add `readout-icon`; readout grid div: replace `gap-3` with `readout-grid` |
 
 ## What Does NOT Change
 
 - Mobile breakpoints (`md:` Tailwind classes) — untouched
 - Mobile drawer (`w-72 max-w-[85vw]`) — untouched
-- Keyboard `AutoScaleKeyboard` — width-scales already, no height intervention
+- Keyboard `AutoScaleKeyboard` — handles its own width scaling, no changes
 - Trackpad canvas `aspectRatio: 4/3` — untouched
 - All existing `min-height: 900px` sidebar token rules — stay as-is
-- Any canvas `devicePixelRatio` math — untouched
+- Canvas `devicePixelRatio` math — untouched
 
 ## Success Criteria
 
-- On 1366×768 at 100% zoom: all test sections visible with significantly less scrolling (~20% height reduction)
-- Sidebar fits within viewport without scrolling at 768px height
-- Sidebar is 208px wide on Chromebook, 256px on larger screens
-- All `<select>` dropdowns render with dark background (#141414) and readable text (#E8EAED)
-- No visual regressions on desktop (32") or mobile
+- On 1366×768 at 100% zoom: the test-runner page's total scrollable content height is reduced by at least 150px compared to before the change
+- On 1366×768: the sidebar renders at 208px wide and its full content (logo through Privacy button) is visible without scrolling
+- On a 1920×1080 (or any ≥900px height) display: layout is visually identical to before — sidebar 256px, full spacing
+- All four `<select>` dropdowns (keyboard, CPU, GPU, Tab Swarm) render with background `#141414` and legible text
+- No visual regressions on mobile (drawer still works, layout correct on <768px width screens)

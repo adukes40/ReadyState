@@ -44,11 +44,11 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
   ]
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto sections-gap">
       {/* System Readout */}
       {platform && (
         <div className="animate-fade-up">
-          <div className="bg-[#141414] rounded-2xl p-4 md:p-5 animate-shimmer border border-white/5">
+          <div className="bg-[#141414] rounded-2xl panel-compact animate-shimmer border border-white/5">
             <div className="flex items-center justify-between mb-4">
               <span className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">System Readout</span>
               <button
@@ -58,7 +58,7 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
                 Export PDF
               </button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 readout-grid">
               <ReadoutCard icon={<PlatformIcon />} label="Platform" value={platform.os} />
               <ReadoutCard icon={<BrowserIcon />} label="Browser" value={cleanBrowser(platform.browser)} />
               <ReadoutCard icon={<CpuIcon />} label="Processor" value={`${platform.cores} cores${platform.architecture ? ` · ${platform.architecture}` : ''}`} />
@@ -124,7 +124,7 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
 function ReadoutCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="bg-[#0f0f0f] border border-white/5 rounded-2xl p-4 flex items-center gap-4 transition-transform hover:scale-[1.02]">
-      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 flex-shrink-0">
+      <div className="readout-icon rounded-xl bg-white/5 flex items-center justify-center border border-white/10 flex-shrink-0">
         {icon}
       </div>
       <div className="min-w-0">
@@ -152,8 +152,8 @@ function TestGroup({ label, index, children }: { label: string; index: number; c
 
 function Panel({ title, info, children }: { title: string; info?: string; children: React.ReactNode }) {
   return (
-    <section className="bg-[#141414] border border-white/5 rounded-2xl p-4 md:p-5 glow-card transition-shadow animate-scale-in">
-      <h3 className="flex items-center gap-2.5 text-sm font-semibold text-text-primary mb-4">
+    <section className="bg-[#141414] border border-white/5 rounded-2xl panel-compact glow-card transition-shadow animate-scale-in">
+      <h3 className="flex items-center gap-2.5 text-sm font-semibold text-text-primary">
         <span className="w-1.5 h-4 rounded-full bg-[#40E0D0]" />
         {title}
         {info && <InfoTip text={info} />}
