@@ -220,6 +220,22 @@ function KeyElement({ def, pressedKeys, testedKeys }: { def: KeyDef; pressedKeys
 
   if (def.special === 'arrow-cluster') return <ArrowCluster pressedKeys={pressedKeys} testedKeys={testedKeys} />
 
+  if (def.osReserved) {
+    return (
+      <div
+        className={`
+          flex flex-col items-center justify-center text-[9px] font-bold font-mono rounded-lg h-9 select-none
+          ${def.grow ? 'flex-1 min-w-9' : (def.w ?? 'w-9')}
+          bg-white/3 text-gray-700 border border-white/5
+        `}
+        title="OS-controlled key - cannot be captured by browser"
+      >
+        <span>{def.label ?? def.code}</span>
+        <span className="text-[7px] text-gray-700 leading-none">OS</span>
+      </div>
+    )
+  }
+
   if (def.special === 'trackpoint') {
     return (
       <div className={`${def.w ?? 'w-4'} h-9 flex items-center justify-center`}>

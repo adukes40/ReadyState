@@ -9,6 +9,7 @@ export interface KeyDef {
   w?: string
   grow?: boolean  // flex-grow to fill remaining row width
   special?: 'trackpoint' | 'trackpoint-btn-left' | 'trackpoint-btn-middle' | 'trackpoint-btn-right' | 'arrow-cluster'
+  osReserved?: boolean  // triggers OS/browser action that cannot be prevented by JS
 }
 
 export type RowDef = {
@@ -31,6 +32,7 @@ export interface KeyboardLayout {
 
 // Helpers
 const k = (code: string, label?: string, w?: string): KeyDef => ({ code, label, w })
+const os = (code: string, label?: string, w?: string): KeyDef => ({ code, label, w, osReserved: true })
 
 const arrows = (): KeyDef => ({ code: '_arrows', special: 'arrow-cluster' })
 
@@ -43,9 +45,9 @@ const CHROMEBOOK: KeyboardLayout = {
   rows: [
     row([
       k('Escape', 'Esc'),
-      k('F1', 'Back'), k('F2', 'Fwd'), k('F3', 'Refr'), k('F4', 'Full'),
-      k('F5', 'Over'), k('F6', 'Dim'), k('F7', 'Brt'),
-      k('F8', 'Mute'), k('F9', 'Vol−'), k('F10', 'Vol+'),
+      os('F1', 'Back'), os('F2', 'Fwd'), os('F3', 'Refr'), os('F4', 'Full'),
+      os('F5', 'Over'), os('F6', 'Dim'), os('F7', 'Brt'),
+      os('F8', 'Mute'), os('F9', 'Vol-'), os('F10', 'Vol+'),
     ]),
     row([
       k('Backquote', '`'), k('Digit1', '1'), k('Digit2', '2'), k('Digit3', '3'),
@@ -299,11 +301,11 @@ const MACBOOK: KeyboardLayout = {
 
 export const LAYOUTS: KeyboardLayout[] = [CHROMEBOOK, LAPTOP, LAPTOP_NUMPAD, THINKPAD, MACBOOK]
 
-/** Get all testable key codes from a layout (excludes gaps, spacers, specials) */
+/** Get all testable key codes from a layout (excludes gaps, spacers, specials, OS-reserved keys) */
 export function getTestableKeys(layout: KeyboardLayout): string[] {
   const mainKeys = layout.rows.flatMap((r) =>
     r.keys
-      .filter((d) => !d.code.startsWith('_') && !d.special)
+      .filter((d) => !d.code.startsWith('_') && !d.special && !d.osReserved)
       .map((d) => d.code)
   )
   const numpadKeys = (layout.numpad ?? []).map((nk) => nk.code)

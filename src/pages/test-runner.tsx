@@ -102,7 +102,7 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
       {/* Fullscreen overlay */}
       {showDisplayTest && (
         <DisplayTestScreen
-          onComplete={() => setShowDisplayTest(false)}
+          onComplete={() => { setShowDisplayTest(false); reportResult('Display', 'pass', 'All color patterns completed') }}
           onExit={() => setShowDisplayTest(false)}
         />
       )}
