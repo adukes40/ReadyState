@@ -85,10 +85,9 @@ export default function PrivacyModal({ onClose }: { onClose: () => void }) {
               browser and the results stay on your device. Nothing is saved after you close the page.
             </p>
             <p>
-              This site is hosted on Cloudflare Pages, which collects standard web analytics
-              (page views, visitor country, browser type) as part of its hosting platform. This is
-              standard Cloudflare functionality and does not include any test results or device details
-              beyond what any website visit provides.
+              Our hosting provider collects standard web analytics
+              (page views, visitor country, browser type) as part of its platform. This does not
+              include any test results or device details beyond what any website visit provides.
             </p>
           </Section>
 
@@ -121,17 +120,16 @@ export default function PrivacyModal({ onClose }: { onClose: () => void }) {
 
           <Section title="Hosting">
             <p>
-              This site is hosted on Cloudflare Pages. No test data leaves your browser. The only
-              server-side interaction is the network speed test, which sends and receives temporary
-              data payloads to measure your connection. These payloads are discarded immediately
-              and are not logged or stored.
+              No test data leaves your browser. The only server-side interaction is the network
+              speed test, which sends and receives temporary data payloads to measure your
+              connection. These payloads are discarded immediately and are not logged or stored.
             </p>
           </Section>
 
           <Section title="PDF Export">
             <p>
-              The "Export PDF" button generates a report locally in your browser using jsPDF.
-              The PDF is created on-device and downloaded directly -it is not uploaded anywhere.
+              The "Export PDF" button generates a report locally in your browser.
+              The PDF is created on-device and downloaded directly. It is not uploaded anywhere.
             </p>
           </Section>
         </div>
