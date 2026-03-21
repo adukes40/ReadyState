@@ -44,11 +44,11 @@ export default function KeyboardTest({ onResult }: { onResult?: (name: string, s
       })
     }
 
-    window.addEventListener('keydown', onDown)
-    window.addEventListener('keyup', onUp)
+    window.addEventListener('keydown', onDown, { capture: true })
+    window.addEventListener('keyup', onUp, { capture: true })
     return () => {
-      window.removeEventListener('keydown', onDown)
-      window.removeEventListener('keyup', onUp)
+      window.removeEventListener('keydown', onDown, { capture: true })
+      window.removeEventListener('keyup', onUp, { capture: true })
     }
   }, [])
 
