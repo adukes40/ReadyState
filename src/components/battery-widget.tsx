@@ -90,9 +90,9 @@ export default function BatteryWidget() {
   const fillColor = getFillColor(battery)
 
   return (
-    <div className="flex flex-col items-center gap-4 pt-4">
+    <div className="flex flex-col items-center sidebar-battery-wrap">
       {/* Battery graphic — stitch style */}
-      <div className="relative w-20 h-32 border-[3px] border-white/20 rounded-2xl p-1 flex flex-col justify-end">
+      <div className="relative sidebar-battery border-[3px] border-white/20 rounded-2xl p-1 flex flex-col justify-end">
         {/* Battery top cap */}
         <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-7 h-2 bg-white/20 rounded-t-sm" />
 

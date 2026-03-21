@@ -78,6 +78,42 @@ html {
   font-variant-numeric: tabular-nums;
 }
 
+/* Scrollable but no visible scrollbar */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sidebar spacing — compact on short viewports, generous on tall ones */
+.sidebar-brand { margin-bottom: 1rem; }
+.sidebar-divider { margin-top: 0.5rem; }
+.sidebar-section { margin-top: 0.5rem; }
+.sidebar-footer { padding-top: 0.5rem; }
+
+@media (min-height: 900px) {
+  .sidebar-brand { margin-bottom: 2rem; }
+  .sidebar-divider { margin-top: 1rem; }
+  .sidebar-section { margin-top: 1rem; }
+  .sidebar-footer { padding-top: 1rem; }
+}
+
+/* Network gauge — smaller on short screens */
+.sidebar-gauge { width: 5.5rem; height: 5.5rem; }
+@media (min-height: 900px) {
+  .sidebar-gauge { width: 7rem; height: 7rem; }
+}
+
+/* Battery — smaller on short screens */
+.sidebar-battery { width: 3.5rem; height: 5rem; }
+.sidebar-battery-wrap { gap: 0.5rem; padding-top: 0.75rem; }
+@media (min-height: 900px) {
+  .sidebar-battery { width: 5rem; height: 8rem; }
+  .sidebar-battery-wrap { gap: 1rem; padding-top: 1rem; }
+}
+
 /* Cyan glow utilities */
 .glow-logo {
   box-shadow: 0 0 20px rgba(64, 224, 208, 0.4), 0 0 60px rgba(64, 224, 208, 0.15);
@@ -133,6 +169,22 @@ html {
 }
 .animate-breathe {
   animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out both;
+}
+
+@keyframes slideInDrawer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-drawer {
+  animation: slideInDrawer 0.25s ease-out both;
 }
 
 @keyframes shimmer {

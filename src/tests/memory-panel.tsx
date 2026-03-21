@@ -50,14 +50,14 @@ export default function MemoryPanel({ onResult }: { onResult?: (name: string, st
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           {status === 'idle' && (
             <>
               <button onClick={start} className="px-4 py-2 text-[10px] font-mono bg-[#40E0D0]/20 text-[#40E0D0] rounded-xl hover:bg-[#40E0D0]/30 transition-colors font-bold uppercase tracking-wider border border-[#40E0D0]/30 shadow-[0_0_10px_rgba(64,224,208,0.2)]">
                 Start
               </button>
-              <span className="text-xs text-gray-500">Allocates memory in 16 MB chunks until the browser limit is reached.</span>
+              <span className="text-xs text-gray-500 hidden sm:inline">Allocates memory in 16 MB chunks until the browser limit is reached.</span>
             </>
           )}
           {status === 'running' && (

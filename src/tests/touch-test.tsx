@@ -117,7 +117,7 @@ export default function TouchTest() {
       </div>
       <canvas
         ref={canvasRef}
-        className="w-full h-64 rounded border border-border cursor-crosshair touch-none"
+        className="w-full h-48 sm:h-64 rounded border border-border cursor-crosshair touch-none"
       />
     </div>
   )

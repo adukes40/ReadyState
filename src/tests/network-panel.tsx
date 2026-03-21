@@ -182,10 +182,10 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
   const ringColor = ringProgress > 0 ? '#40E0D0' : 'rgba(255,255,255,0.08)'
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-2">
       {/* Clickable gauge — primary download speed */}
       <div
-        className={`relative w-28 h-28 ${canStart || canRetest ? 'cursor-pointer' : ''}`}
+        className={`relative sidebar-gauge ${canStart || canRetest ? 'cursor-pointer' : ''}`}
         onClick={handleGaugeClick}
       >
         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">

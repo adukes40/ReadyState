@@ -3,7 +3,7 @@
  * Stitch theme: bg-white/5 untested keys, cyan glow on tested keys.
  */
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { LAYOUTS, getTestableKeys } from './keyboard-layouts'
 import type { KeyDef, NumpadKey } from './keyboard-layouts'
 
@@ -114,9 +114,9 @@ export default function KeyboardTest({ onResult }: { onResult?: (name: string, s
         </div>
       </div>
 
-      {/* Keyboard */}
-      <div className="bg-black/50 rounded-2xl p-5 border border-white/5 shadow-inner">
-        <div className="flex gap-3 justify-center overflow-x-auto pb-1" style={{ direction: 'ltr' }}>
+      {/* Keyboard — auto-scales to fit container */}
+      <AutoScaleKeyboard layoutId={layoutId}>
+        <div className="flex gap-3 justify-center" style={{ direction: 'ltr' }}>
           <div className="space-y-1.5">
             {layout.rows.map((rowDef, ri) => (
               <div key={ri} className="flex gap-1.5 items-end min-w-max">
@@ -131,7 +131,7 @@ export default function KeyboardTest({ onResult }: { onResult?: (name: string, s
             <NumpadGrid keys={layout.numpad} pressedKeys={pressedKeys} testedKeys={testedKeys} />
           )}
         </div>
-      </div>
+      </AutoScaleKeyboard>
 
       {/* Progress bar */}
       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -143,6 +143,67 @@ export default function KeyboardTest({ onResult }: { onResult?: (name: string, s
             boxShadow: pct > 0 ? '0 0 8px rgba(64,224,208,0.6)' : 'none',
           }}
         />
+      </div>
+    </div>
+  )
+}
+
+function AutoScaleKeyboard({ layoutId, children }: { layoutId: string; children: React.ReactNode }) {
+  const outerRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+
+  const recalc = useCallback(() => {
+    const outer = outerRef.current
+    const inner = innerRef.current
+    if (!outer || !inner) return
+
+    // Reset to measure natural size
+    inner.style.transform = 'none'
+    inner.style.height = ''
+    inner.style.width = 'max-content'
+
+    // Use getBoundingClientRect for accurate measurement
+    const naturalW = inner.getBoundingClientRect().width
+    const naturalH = inner.getBoundingClientRect().height
+    // Available width = outer content area (subtract padding)
+    const outerStyle = getComputedStyle(outer)
+    const padL = parseFloat(outerStyle.paddingLeft)
+    const padR = parseFloat(outerStyle.paddingRight)
+    const availableW = outer.clientWidth - padL - padR
+
+    const s = naturalW > availableW ? availableW / naturalW : 1
+
+    inner.style.width = ''
+    if (s < 1) {
+      inner.style.transform = `scale(${s})`
+      inner.style.height = `${naturalH * s}px`
+      inner.style.width = `${naturalW}px`
+      // Center via margin
+      const gap = availableW - naturalW * s
+      inner.style.marginLeft = `${gap / 2}px`
+    } else {
+      inner.style.transform = ''
+      inner.style.height = ''
+      inner.style.width = ''
+      inner.style.marginLeft = ''
+    }
+  }, [])
+
+  useEffect(() => {
+    // Small delay to ensure layout is settled after mount/layout change
+    requestAnimationFrame(recalc)
+    const ro = new ResizeObserver(recalc)
+    if (outerRef.current) ro.observe(outerRef.current)
+    return () => ro.disconnect()
+  }, [recalc, layoutId])
+
+  return (
+    <div ref={outerRef} className="bg-black/50 rounded-2xl p-3 md:p-5 border border-white/5 shadow-inner overflow-hidden">
+      <div
+        ref={innerRef}
+        style={{ transformOrigin: 'top left' }}
+      >
+        {children}
       </div>
     </div>
   )

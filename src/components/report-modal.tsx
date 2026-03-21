@@ -222,7 +222,8 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
 
   return createPortal(
     <div
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: '24px' }}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      className="p-3 sm:p-6"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{ width: '100%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto', background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
@@ -263,8 +264,8 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
                 {notRunCount > 0 && <span className="text-gray-500">{notRunCount} not run</span>}
               </div>
             </div>
-            <div className="border border-white/5 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="border border-white/5 rounded-xl overflow-x-auto">
+              <table className="w-full text-sm min-w-[400px]">
                 <thead>
                   <tr className="bg-white/[0.03]">
                     <th className="text-left px-3 py-2 text-[10px] font-bold tracking-widest text-gray-500 uppercase">Test</th>
@@ -303,7 +304,7 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
             <button
               onClick={onClose}
               className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"

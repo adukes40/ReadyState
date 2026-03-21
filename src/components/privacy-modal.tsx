@@ -16,7 +16,8 @@ export default function PrivacyModal({ onClose }: { onClose: () => void }) {
 
   return createPortal(
     <div
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: '24px' }}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      className="p-3 sm:p-6"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{ width: '100%', maxWidth: '672px', maxHeight: '85vh', overflowY: 'auto', background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
@@ -153,8 +154,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function DataRow({ label, detail }: { label: string; detail: string }) {
   return (
-    <div className="flex gap-3 py-2 border-b border-white/5 last:border-0">
-      <span className="text-sm text-gray-300 font-medium flex-shrink-0 w-32">{label}</span>
+    <div className="flex flex-col sm:flex-row gap-1 sm:gap-3 py-2 border-b border-white/5 last:border-0">
+      <span className="text-sm text-gray-300 font-medium flex-shrink-0 sm:w-32">{label}</span>
       <span className="text-sm text-gray-500">{detail}</span>
     </div>
   )

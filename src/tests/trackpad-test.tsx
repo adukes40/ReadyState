@@ -192,9 +192,9 @@ export default function TrackpadTest({ onResult }: { onResult?: (name: string, s
       </div>
 
       {/* Trackpad area: action list left, compact canvas centered right */}
-      <div className="flex gap-3 items-center justify-center">
-        {/* Vertical action checklist */}
-        <div className="flex flex-col gap-1.5 flex-shrink-0">
+      <div className="flex flex-col md:flex-row gap-3 items-center justify-center">
+        {/* Horizontal action checklist on mobile, vertical on desktop */}
+        <div className="flex flex-row md:flex-col gap-1.5 flex-shrink-0 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           {ALL_ACTIONS.map((action) => (
             <span
               key={action}
@@ -213,7 +213,7 @@ export default function TrackpadTest({ onResult }: { onResult?: (name: string, s
         </div>
 
         {/* Compact centered canvas */}
-        <div className="bg-black/50 rounded-2xl border border-white/5 shadow-inner overflow-hidden" style={{ width: '320px' }}>
+        <div className="bg-black/50 rounded-2xl border border-white/5 shadow-inner overflow-hidden w-full max-w-[320px]">
           <canvas
             ref={canvasRef}
             className="w-full cursor-none block"
