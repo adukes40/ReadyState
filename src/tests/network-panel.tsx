@@ -199,7 +199,6 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
             strokeDasharray={`${CIRCUMFERENCE}`}
             strokeDashoffset={dashOffset}
             className={phase === 'done' ? 'transition-all duration-700' : ''}
-            style={ringProgress > 0 ? { filter: 'drop-shadow(0 0 10px rgba(64,224,208,0.8))' } : undefined}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -211,7 +210,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
           )}
           {hasDownload && (
             <>
-              <span className="text-[9px] text-gray-500 font-medium uppercase tracking-widest">Download</span>
+              <span className="text-[8px] text-gray-500 font-medium uppercase tracking-tight">Down</span>
               <span className="text-2xl font-bold font-mono font-tabular tracking-tight text-white">{result.downloadMbps}</span>
               <span className="text-[10px] text-gray-400 font-medium">Mbps</span>
             </>
