@@ -15,6 +15,7 @@ import DisplayTestScreen from '../tests/display-test-screen'
 import MemoryPanel from '../tests/memory-panel'
 import TabSwarmPanel from '../tests/tab-swarm-panel'
 import MediaPanel from '../tests/media-panel'
+import KofiButton from '../components/kofi-button'
 
 interface TestRunnerProps {
   reportResult: (name: string, status: TestResult['status'], detail: string) => void
@@ -58,7 +59,8 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
                 Export PDF
               </button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 readout-grid">
+            <KofiButton />
+            <div className="grid grid-cols-2 md:grid-cols-4 readout-grid mt-3">
               <ReadoutCard icon={<PlatformIcon />} label="Platform" value={platform.os} />
               <ReadoutCard icon={<BrowserIcon />} label="Browser" value={cleanBrowser(platform.browser)} />
               <ReadoutCard icon={<CpuIcon />} label="Processor" value={`${platform.cores} cores${platform.architecture ? ` · ${platform.architecture}` : ''}`} />
