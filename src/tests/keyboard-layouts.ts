@@ -77,6 +77,7 @@ const CHROMEBOOK: KeyboardLayout = {
       k('ControlLeft', 'Ctrl', 'w-[3.25rem]'), k('AltLeft', 'Alt', 'w-[2.75rem]'),
       { code: 'Space', label: '', grow: true },
       k('AltRight', 'Alt', 'w-[2.75rem]'), k('ControlRight', 'Ctrl', 'w-[3.25rem]'),
+      arrows(),
     ]),
   ],
 }
