@@ -31,10 +31,18 @@ src/stitch/
 
 # Playwright test artifacts
 .playwright-mcp/
+
+# Images - only allow specific production assets
 *.jpeg
+*.jpg
 *.png
-!public/**/*.png
-!src/**/*.png
+!public/favicon.svg
+!src/logo/darkmodesidebarlogo.png
+!src/logo/favicon.png
+
+# Design mockups and spec docs
+redesign-*.jpg
+docs/superpowers/
 
 # Environment and secrets
 .env
