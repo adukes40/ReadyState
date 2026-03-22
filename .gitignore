@@ -41,3 +41,7 @@ src/stitch/
 .env.*
 !.env.example
 wrangler.toml
+
+# App config (contains personal URLs/keys)
+src/config.ts
+!src/config.example.ts

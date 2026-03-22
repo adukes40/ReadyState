@@ -15,6 +15,8 @@ import DisplayTestScreen from '../tests/display-test-screen'
 import MemoryPanel from '../tests/memory-panel'
 import TabSwarmPanel from '../tests/tab-swarm-panel'
 import MediaPanel from '../tests/media-panel'
+import NetworkPanel from '../tests/network-panel'
+import BatteryWidget from '../components/battery-widget'
 import KofiButton from '../components/kofi-button'
 
 interface TestRunnerProps {
@@ -79,6 +81,15 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
         <Panel title="Audio & Camera" info="Tests speaker output (440Hz tone), microphone input (3s recording level check), and camera (resolution + frame rate). Verifies all media hardware works for video calls and classroom activities.">
           <MediaPanel onDisplayTest={() => setShowDisplayTest(true)} onResult={reportResult} />
         </Panel>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Panel title="Network Speed" info="Measures download/upload speed, latency, and jitter against Cloudflare's edge network. Click the gauge to start.">
+            <NetworkPanel onResult={reportResult} />
+          </Panel>
+          <Panel title="Battery Status" info="Live battery level, charge state, and estimated time remaining. Updates every 30 seconds.">
+            <BatteryWidget />
+          </Panel>
+        </div>
       </TestGroup>
 
       {/* Input Tests */}

@@ -223,8 +223,7 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
 
       {error && <span className="text-[10px] font-mono text-status-bad text-center">{error}</span>}
 
-      {/* Stats grid below gauge */}
-      {(result.uploadMbps != null || result.latencyMs != null || result.jitterMs != null) && (
+      {/* Stats grid below gauge — always visible with placeholders */}
         <div className="grid grid-cols-3 gap-x-3 w-full text-[10px] px-1">
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-gray-500 font-medium tracking-wide">Upload</span>
@@ -245,7 +244,6 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
             </span>
           </div>
         </div>
-      )}
 
       {/* Retest link after results */}
       {canRetest && hasDownload && (

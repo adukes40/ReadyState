@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { KOFI_URL } from "../config";
 
 const TAGLINES = [
   "Every coffee bought extends my will to live by approximately 4 hours.",
@@ -65,7 +66,7 @@ export default function KofiButton() {
   const handleClick = () => {
     setClicked(true);
     setTimeout(() => setClicked(false), 300);
-    window.open("https://ko-fi.com/austindukes", "_blank", "noopener,noreferrer");
+    window.open(KOFI_URL, "_blank", "noopener,noreferrer");
   };
 
   return (

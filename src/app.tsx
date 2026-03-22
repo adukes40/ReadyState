@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react'
 import TestRunner from './pages/test-runner'
-import BatteryWidget from './components/battery-widget'
-import NetworkPanel from './tests/network-panel'
 import PrivacyModal from './components/privacy-modal'
 import type { TestResult } from './components/report-modal'
 import logoImg from './logo/darkmodesidebarlogo.png'
@@ -63,17 +61,6 @@ export default function App() {
           )
         })}
       </div>
-
-      {/* Network Speed Test */}
-      <div className="mx-0 sidebar-divider border-t border-white/5" />
-      <div className="sidebar-section">
-        <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase text-center mb-2">Network Speed</div>
-        <NetworkPanel onResult={reportResult} />
-      </div>
-
-      {/* Battery widget */}
-      <div className="mx-0 sidebar-divider border-t border-white/5" />
-      <BatteryWidget />
 
       {/* Privacy link at bottom */}
       <div className="mt-auto sidebar-footer">
