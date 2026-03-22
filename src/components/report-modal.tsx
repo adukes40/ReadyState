@@ -198,21 +198,28 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
     }
 
     // Performed by line
-    y += 5
+    y += 10
     if (y > 260) { doc.addPage(); y = 20 }
-    doc.line(margin, y, margin + contentWidth, y)
-    y += 8
-
+    doc.setDrawColor(0, 0, 0)
+    doc.setLineWidth(0.3)
     doc.setFontSize(9)
     doc.setFont('helvetica', 'bold')
     doc.text('Performed by:', margin + 2, y)
     doc.setFont('helvetica', 'normal')
-    const techText = technician.trim() || '________________________'
-    doc.text(techText, margin + 40, y)
+    if (technician.trim()) {
+      doc.text(technician.trim(), margin + 40, y)
+    } else {
+      doc.line(margin + 40, y + 1, margin + 120, y + 1)
+    }
     doc.setFont('helvetica', 'bold')
-    doc.text('Date:', margin + 120, y)
+    doc.text('Date:', margin + 122, y)
     doc.setFont('helvetica', 'normal')
     doc.text(reportDate, margin + 135, y)
+    y += 8
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Signature:', margin + 2, y)
+    doc.line(margin + 40, y + 1, margin + 120, y + 1)
 
     return doc
   }
