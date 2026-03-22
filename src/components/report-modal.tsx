@@ -70,6 +70,8 @@ function cleanGPU(raw: string): string {
 export default function ReportModal({ platform, testResults, onClose }: ReportModalProps) {
   const [deviceName, setDeviceName] = useState('')
   const [notes, setNotes] = useState('')
+  const [technician, setTechnician] = useState('')
+  const [reportDate, setReportDate] = useState(new Date().toLocaleDateString())
 
   const buildPDF = () => {
     const doc = new jsPDF()
@@ -195,6 +197,23 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
       doc.text('No notes provided.', margin + 2, y)
     }
 
+    // Performed by line
+    y += 5
+    if (y > 260) { doc.addPage(); y = 20 }
+    doc.line(margin, y, margin + contentWidth, y)
+    y += 8
+
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Performed by:', margin + 2, y)
+    doc.setFont('helvetica', 'normal')
+    const techText = technician.trim() || '________________________'
+    doc.text(techText, margin + 40, y)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Date:', margin + 120, y)
+    doc.setFont('helvetica', 'normal')
+    doc.text(reportDate, margin + 135, y)
+
     return doc
   }
 
@@ -301,6 +320,26 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
               rows={4}
               className="w-full px-3 py-2.5 text-sm bg-white/5 text-gray-200 rounded-xl border border-white/10 outline-none focus:border-[#40E0D0]/50 transition-colors placeholder:text-gray-600 resize-none"
             />
+          </div>
+
+          {/* Performed by */}
+          <div>
+            <label className="text-xs font-bold tracking-widest text-[#40E0D0] uppercase block mb-2">Performed By</label>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={technician}
+                onChange={(e) => setTechnician(e.target.value)}
+                placeholder="Technician name (or leave blank)"
+                className="flex-1 px-3 py-2.5 text-sm bg-white/5 text-gray-200 rounded-xl border border-white/10 outline-none focus:border-[#40E0D0]/50 transition-colors placeholder:text-gray-600 font-mono"
+              />
+              <input
+                type="text"
+                value={reportDate}
+                onChange={(e) => setReportDate(e.target.value)}
+                className="w-36 px-3 py-2.5 text-sm bg-white/5 text-gray-200 rounded-xl border border-white/10 outline-none focus:border-[#40E0D0]/50 transition-colors font-mono"
+              />
+            </div>
           </div>
 
           {/* Action buttons */}
