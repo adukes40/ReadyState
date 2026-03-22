@@ -78,15 +78,15 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
 
       {/* Hardware Tests */}
       <TestGroup label="Hardware Tests" index={0}>
-        <Panel title="Audio & Camera" info="Tests speaker output (440Hz tone), microphone input (3s recording level check), and camera (resolution + frame rate). Verifies all media hardware works for video calls and classroom activities.">
+        <Panel title="Audio & Camera" info={"Speaker: plays a 440Hz test tone to verify audio output.\nMicrophone: records 3 seconds and checks input level.\nCamera: detects resolution and frame rate.\nDisplay: click Run Display Test to cycle fullscreen colors for dead pixel and backlight bleed checks. Completing all colors reports a pass."}>
           <MediaPanel onDisplayTest={() => setShowDisplayTest(true)} onResult={reportResult} />
         </Panel>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Panel title="Network Speed" info="Measures download/upload speed, latency, and jitter against Cloudflare's edge network. Click the gauge to start.">
+          <Panel title="Network Speed" info={"Click the gauge to run 14 measurement steps against Cloudflare's edge.\nDownload/Upload: measures throughput in Mbps.\nLatency/Jitter: idle connection responsiveness.\nDL/UL Latency and Jitter: measured during active transfers to show real-world performance under load.\nScore: overall connection quality rating from Cloudflare.\nColor thresholds: latency green under 50ms, speed green above 25 Mbps, jitter green under 5ms."}>
             <NetworkPanel onResult={reportResult} />
           </Panel>
-          <Panel title="Battery Status" info="Live battery level, charge state, and estimated time remaining. Updates every 30 seconds.">
+          <Panel title="Battery Status" info={"Reads the Battery Status API for live charge level, plug state, and estimated time to full or empty.\nAuto-updates every 30 seconds and on system battery events.\nColor changes at 25% (yellow) and 10% (red).\nNot available on all browsers or desktop devices."}>
             <BatteryWidget />
           </Panel>
         </div>
@@ -94,7 +94,7 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
 
       {/* Input Tests */}
       <TestGroup label="Input Tests" index={1}>
-        <Panel title="Keyboard & Trackpad" info="Tests every key on the keyboard and trackpad actions. Press each key and it lights up when registered. Draw on the trackpad area to verify cursor tracking, clicks, and scroll gestures.">
+        <Panel title="Keyboard & Trackpad" info={"Keyboard: press each key on the physical keyboard to mark it as tested. Switch between Chromebook, MacBook, and Laptop layouts with the dropdown. On Chromebooks, top-row keys (Back, Refresh, Fullscreen, etc.) are OS-controlled and cannot be captured.\nTrackpad: move the cursor, left/right/middle click, double-click, and scroll vertically and horizontally on the canvas to verify all 7 actions.\nUse Reset to clear progress on either test."}>
           <KeyboardTest onResult={reportResult} />
           <div className="border-t border-white/5 my-4" />
           <TrackpadTest onResult={reportResult} />
@@ -103,11 +103,11 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
 
       {/* Stress Tests */}
       <TestGroup label="Stress Tests" index={2}>
-        <Panel title="Memory Pressure" info="Progressively allocates memory until the browser pushes back. The gauge shows what percentage of reported RAM is allocated. GC detection means the browser is actively reclaiming memory under pressure.">
+        <Panel title="Memory Pressure" info={"Allocates memory in 16 MB chunks until the browser refuses or you click Stop.\nThe gauge shows allocation as a percentage of reported device RAM.\nGC Detected: appears if the browser reclaims memory mid-test.\nPeak allocation is shown after the test completes.\nUse Reset to return to idle."}>
           <MemoryPanel onResult={reportResult} />
         </Panel>
 
-        <Panel title="Tab Swarm" info="Opens real browser tabs with actual websites (Google searches, Wikipedia, Desmos, YouTube) to stress test multitasking under realistic K-12 workloads. Monitors thread latency, frame rate, and memory in real-time as tabs pile up. Choose a preset like Classroom Mix or Testing Day to match a real student session.">
+        <Panel title="Tab Swarm" info={"Spawns Web Workers that simulate browser tabs at four weight levels: Search (8MB), Docs (24MB), Interactive (48MB), Video (64MB).\nPick a preset like Classroom Mix or Testing Day, then click Swarm.\nTabs spawn every 1.2 seconds while real-time charts track thread latency, frame rate, and JS heap memory.\nAfter all tabs open, the test runs 5 more seconds to measure sustained load.\nPeak latency under 50ms: device handled it well. Over 150ms: device struggled."}>
           <TabSwarmPanel onResult={reportResult} />
         </Panel>
       </TestGroup>
