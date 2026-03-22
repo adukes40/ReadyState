@@ -28,6 +28,7 @@ src/stitch/
 
 # Claude Code local data
 .claude/
+CLAUDE.md
 
 # Playwright test artifacts
 .playwright-mcp/
@@ -36,7 +37,6 @@ src/stitch/
 *.jpeg
 *.jpg
 *.png
-!public/favicon.svg
 !src/logo/darkmodesidebarlogo.png
 !src/logo/favicon.png
 
