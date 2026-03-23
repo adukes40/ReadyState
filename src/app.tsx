@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react'
 import TestRunner from './pages/test-runner'
+import TestGuide from './pages/test-guide'
 import PrivacyPage from './pages/privacy'
 import PrivacyModal from './components/privacy-modal'
 import type { TestResult } from './components/report-modal'
 import logoImg from './logo/darkmodesidebarlogo.png'
 
-type Page = 'test-runner'
+type Page = 'test-runner' | 'test-guide'
 
 const NAV_ITEMS: { page: Page; label: string; icon: React.ReactNode }[] = [
   {
@@ -16,6 +17,16 @@ const NAV_ITEMS: { page: Page; label: string; icon: React.ReactNode }[] = [
         <path d="M9 2v6l-2 4v4a2 2 0 002 2h6a2 2 0 002-2v-4l-2-4V2" />
         <path d="M7 2h10" />
         <path d="M7 12h10" />
+      </svg>
+    ),
+  },
+  {
+    page: 'test-guide',
+    label: 'Test Guide',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
       </svg>
     ),
   },
@@ -136,6 +147,7 @@ export default function App() {
       {/* Main content */}
       <main className="flex-1 overflow-y-auto px-4 pt-16 pb-4 md:px-6 md:py-6">
         {page === 'test-runner' && <TestRunner reportResult={reportResult} testResults={results} />}
+        {page === 'test-guide' && <TestGuide />}
       </main>
 
     </div>
