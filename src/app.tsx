@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import TestRunner from './pages/test-runner'
+import PrivacyPage from './pages/privacy'
 import PrivacyModal from './components/privacy-modal'
 import type { TestResult } from './components/report-modal'
 import logoImg from './logo/darkmodesidebarlogo.png'
@@ -21,6 +22,11 @@ const NAV_ITEMS: { page: Page; label: string; icon: React.ReactNode }[] = [
 ]
 
 export default function App() {
+  // Render standalone privacy page at /privacy (no sidebar/chrome)
+  if (window.location.pathname === '/privacy') {
+    return <PrivacyPage />
+  }
+
   const [page, setPage] = useState<Page>('test-runner')
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
