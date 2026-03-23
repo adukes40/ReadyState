@@ -50,12 +50,6 @@ function statusDot(s: TestResult['status']): string {
   }
 }
 
-function cleanBrowser(raw: string): string {
-  const match = raw.match(/Chrome\s+(\d+\.\d+)/)
-  if (match) return `Chrome ${match[1]}`
-  return raw.length > 30 ? raw.slice(0, 30) + '...' : raw
-}
-
 function cleanGPU(raw: string): string {
   return raw
     .replace(/^ANGLE \(/, '')
@@ -112,7 +106,7 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
     doc.setFont('helvetica', 'normal')
     const sysInfo = [
       ['Platform', platform.os],
-      ['Browser', cleanBrowser(platform.browser)],
+      ['Browser', platform.browser],
       ['Processor', `${platform.cores} cores${platform.architecture ? ` / ${platform.architecture}` : ''}`],
       ['Memory', platform.ram ? (platform.ram >= 8 ? `${platform.ram}+ GB` : `${platform.ram} GB`) : 'N/A'],
       ['Display', `${platform.screenWidth}x${platform.screenHeight} @${platform.pixelRatio}x`],

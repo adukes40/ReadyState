@@ -3,22 +3,9 @@
  * for use as a public URL (e.g. readystate.dev/privacy).
  */
 
-export default function PrivacyPage() {
-  return (
-    <div className="min-h-screen bg-surface-base flex items-start justify-center px-6 py-12 sm:px-10 sm:py-20">
-      <div className="w-full max-w-3xl bg-[#141414] border border-white/10 rounded-2xl shadow-2xl">
-        {/* Header */}
-        <div className="border-b border-white/5 px-8 py-6 flex items-center gap-3 rounded-t-2xl">
-          <div className="w-8 h-8 rounded-lg bg-[#40E0D0]/10 flex items-center justify-center border border-[#40E0D0]/20">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#40E0D0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold text-white tracking-wide">Privacy & Data</h1>
-        </div>
-
-        {/* Content */}
-        <div className="px-8 py-8 space-y-7">
+export default function PrivacyPage({ embedded }: { embedded?: boolean }) {
+  const content = (
+    <div className="space-y-7">
           <Section title="Overview">
             <p>
               ReadyState is a browser-based diagnostic tool for Chromebook fleets. All tests run entirely in your
@@ -109,18 +96,54 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
-          {/* Back link */}
-          <div className="pt-4 border-t border-white/5">
-            <a
-              href="/"
-              className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#40E0D0] transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              Back to ReadyState
-            </a>
+          {!embedded && (
+            <div className="pt-4 border-t border-white/5">
+              <a
+                href="/"
+                className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#40E0D0] transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to ReadyState
+              </a>
+            </div>
+          )}
+        </div>
+  )
+
+  if (embedded) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-[#40E0D0]/10 flex items-center justify-center border border-[#40E0D0]/20">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#40E0D0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
           </div>
+          <div>
+            <h1 className="text-xl font-bold text-white">Privacy & Data</h1>
+            <p className="text-sm text-gray-500">What is detected, stored, and collected</p>
+          </div>
+        </div>
+        {content}
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-surface-base flex items-start justify-center px-6 py-12 sm:px-10 sm:py-20">
+      <div className="w-full max-w-3xl bg-[#141414] border border-white/10 rounded-2xl shadow-2xl">
+        <div className="border-b border-white/5 px-8 py-6 flex items-center gap-3 rounded-t-2xl">
+          <div className="w-8 h-8 rounded-lg bg-[#40E0D0]/10 flex items-center justify-center border border-[#40E0D0]/20">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#40E0D0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold text-white tracking-wide">Privacy & Data</h1>
+        </div>
+        <div className="px-8 py-8">
+          {content}
         </div>
       </div>
     </div>

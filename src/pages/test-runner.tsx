@@ -64,7 +64,7 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
             <KofiButton />
             <div className="grid grid-cols-2 md:grid-cols-4 readout-grid mt-3">
               <ReadoutCard icon={<PlatformIcon />} label="Platform" value={platform.os} />
-              <ReadoutCard icon={<BrowserIcon />} label="Browser" value={cleanBrowser(platform.browser)} />
+              <ReadoutCard icon={<BrowserIcon />} label="Browser" value={platform.browser} />
               <ReadoutCard icon={<CpuIcon />} label="Processor" value={`${platform.cores} cores${platform.architecture ? ` · ${platform.architecture}` : ''}`} />
               <ReadoutCard icon={<MemoryIcon />} label="Memory" value={platform.ram ? (platform.ram >= 8 ? `≥${platform.ram} GB` : `${platform.ram} GB`) : '—'} />
               <ReadoutCard icon={<DisplayIcon />} label="Display" value={`${platform.screenWidth}×${platform.screenHeight} @${platform.pixelRatio}x`} />
@@ -174,12 +174,6 @@ function Panel({ title, info, children }: { title: string; info?: string; childr
       {children}
     </section>
   )
-}
-
-function cleanBrowser(raw: string): string {
-  const match = raw.match(/Chrome\s+(\d+\.\d+)/)
-  if (match) return `Chrome ${match[1]}`
-  return raw.length > 30 ? raw.slice(0, 30) + '...' : raw
 }
 
 function cleanGPU(raw: string): string {
