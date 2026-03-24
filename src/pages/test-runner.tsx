@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react'
 import { detectPlatform } from '../platform/detect'
 import type { PlatformInfo } from '../platform/detect'
-import { detectExtension, getExtensionDeviceInfo, getExtensionSettings, setExtensionSetting, getExtensionCategories } from '../platform/extension-bridge'
+import { detectExtension, getExtensionDeviceInfo, getExtensionSettings, setExtensionSetting, getExtensionCategories, getExtensionDeviceNameFormat } from '../platform/extension-bridge'
 import type { ExtensionDeviceInfo, ExtensionSettings, CategoryDef } from '../platform/extension-bridge'
 import ExtensionSettingsPanel from '../components/extension-settings'
 import InfoTip from '../components/info-tip'
@@ -33,6 +33,7 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
   const [extData, setExtData] = useState<ExtensionDeviceInfo | null>(null)
   const [extSettings, setExtSettings] = useState<ExtensionSettings | null>(null)
   const [extCategories, setExtCategories] = useState<Record<string, CategoryDef> | null>(null)
+  const [extNameFormat, setExtNameFormat] = useState<{ format: string | null; locked: boolean } | null>(null)
   const [showDisplayTest, setShowDisplayTest] = useState(false)
   const [showReport, setShowReport] = useState(false)
 
@@ -41,14 +42,16 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
     detectExtension(3000).then(async (found) => {
       if (!found) return
       try {
-        const [info, settings, cats] = await Promise.all([
+        const [info, settings, cats, nameFormat] = await Promise.all([
           getExtensionDeviceInfo(),
           getExtensionSettings(),
-          getExtensionCategories()
+          getExtensionCategories(),
+          getExtensionDeviceNameFormat().catch(() => ({ format: null, locked: false }))
         ])
         setExtData(info)
         setExtSettings(settings)
         setExtCategories(cats)
+        setExtNameFormat(nameFormat)
       } catch { /* extension available but data fetch failed */ }
     })
   }, [])
@@ -88,96 +91,49 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
       {platform && (
         <div className="animate-fade-up">
           <div className="bg-[#141414] rounded-2xl panel-compact animate-shimmer border border-white/5">
+            {/* Readout header with gear icon */}
             <div className="flex items-center justify-between mb-4">
               <span className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">System Readout</span>
-              <button
-                onClick={() => setShowReport(true)}
-                className="px-4 py-1.5 text-xs font-mono bg-white/5 text-white/80 rounded-lg hover:bg-white/10 hover:text-white transition-colors border border-white/10"
-              >
-                Export PDF
-              </button>
+              <div className="flex items-center gap-3">
+                {extSettings && extCategories && (
+                  <span className="text-[10px] font-mono text-[#40E0D0]">
+                    {Object.values(extSettings.settings).filter(Boolean).length}/{Object.keys(extCategories).length} categories
+                  </span>
+                )}
+                <button
+                  onClick={() => setShowReport(true)}
+                  className="px-4 py-1.5 text-xs font-mono bg-white/5 text-white/80 rounded-lg hover:bg-white/10 hover:text-white transition-colors border border-white/10"
+                >
+                  Export PDF
+                </button>
+              </div>
             </div>
             <KofiButton />
+
+            {/* Baseline row - browser API fields */}
             <div className="grid grid-cols-2 md:grid-cols-4 readout-grid mt-3">
-              <ReadoutCard icon={<PlatformIcon />} label="Platform" value={platform.os} />
-              <ReadoutCard icon={<BrowserIcon />} label="Browser" value={platform.browser} />
-              <ReadoutCard
-                icon={<CpuIcon />}
-                label="Processor"
-                value={extData?.cpu?.model_name
-                  ? `${extData.cpu.model_name} (${extData.cpu.num_of_processors} cores)`
-                  : `${platform.cores} cores${platform.architecture ? ` · ${platform.architecture}` : ''}`}
-              />
-              <ReadoutCard
-                icon={<MemoryIcon />}
-                label="Memory"
-                value={extData?.memory?.capacity_gb
-                  ? `${extData.memory.capacity_gb} GB`
-                  : platform.ram ? (platform.ram >= 8 ? `${'\u2265'}${platform.ram} GB` : `${platform.ram} GB`) : '\u2014'}
-              />
-              <ReadoutCard icon={<DisplayIcon />} label="Display" value={`${platform.screenWidth}×${platform.screenHeight} @${platform.pixelRatio}x`} />
-              <ReadoutCard icon={<ColorIcon />} label="Color Depth" value={`${platform.colorDepth}-bit`} />
-              <ReadoutCard icon={<TouchIcon />} label="Touch" value={platform.touchSupported ? `${platform.maxTouchPoints} points` : 'None'} />
-              {platform.gpu && <ReadoutCard icon={<GpuIcon />} label="Graphics" value={cleanGPU(platform.gpu)} />}
-              {extData?.storage && Array.isArray(extData.storage) && extData.storage.length > 0 && !('error' in extData.storage[0]) && (
-                <ReadoutCard icon={<StorageIcon />} label="Storage" value={formatExtStorage(extData.storage)} />
-              )}
+              {getBaselineFields(platform, extData).map((f, i) => (
+                <ReadoutCard key={i} icon={f.icon} label={f.label} value={f.value} />
+              ))}
             </div>
-            {/* Device hardware info from extension */}
-            {extData?.device_info && !extData.device_info.error && (
-              <div className="grid grid-cols-2 md:grid-cols-4 readout-grid mt-2">
-                {extData.device_info.manufacturer && (
-                  <ReadoutCard icon={<DeviceIcon />} label="Manufacturer" value={extData.device_info.manufacturer} />
-                )}
-                {extData.device_info.model && (
-                  <ReadoutCard icon={<DeviceIcon />} label="Model" value={extData.device_info.model} />
-                )}
-              </div>
-            )}
-            {/* Network info from extension */}
-            {extData?.network && !extData.network.error && (
-              <div className="grid grid-cols-2 md:grid-cols-4 readout-grid mt-2">
-                {extData.network.mac_address && (
-                  <ReadoutCard icon={<NetworkIcon />} label="MAC Address" value={extData.network.mac_address} />
-                )}
-                {extData.network.ipv4 && (
-                  <ReadoutCard icon={<NetworkIcon />} label="IPv4" value={extData.network.ipv4} />
-                )}
-              </div>
-            )}
-            {/* Managed device attributes */}
-            {extData?.managed_attributes && (
-              <div className="mt-3">
-                {extData.managed_attributes.managed && !extData.managed_attributes.error ? (
-                  <div className="bg-[#0a1628] border border-blue-500/30 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ManagedIcon />
-                      <span className="text-xs font-bold tracking-wide text-blue-400 uppercase">Managed Device</span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 readout-grid">
-                      {extData.managed_attributes.serial_number && (
-                        <ReadoutCard icon={<SerialIcon />} label="Serial Number" value={extData.managed_attributes.serial_number} />
-                      )}
-                      {extData.managed_attributes.asset_id && (
-                        <ReadoutCard icon={<AssetIcon />} label="Asset ID" value={extData.managed_attributes.asset_id} />
-                      )}
-                      {extData.managed_attributes.hostname && (
-                        <ReadoutCard icon={<HostnameIcon />} label="Hostname" value={extData.managed_attributes.hostname} />
-                      )}
-                      {extData.managed_attributes.location && (
-                        <ReadoutCard icon={<LocationIcon />} label="Location" value={extData.managed_attributes.location} />
-                      )}
-                    </div>
+
+            {/* Extension data row(s) */}
+            {extData && (() => {
+              const cards = getExtensionCards(extData)
+              if (cards.length === 0) return null
+              return (
+                <>
+                  {/* Gradient separator */}
+                  <div className="h-px my-3" style={{ background: 'linear-gradient(90deg, transparent, #1a3a3a, transparent)' }} />
+                  <div className="grid grid-cols-2 md:grid-cols-4 readout-grid">
+                    {cards.map((c, i) => (
+                      <ExtensionCard key={i} label={c.label} value={c.value} sub={c.sub} />
+                    ))}
                   </div>
-                ) : (
-                  extData.platform?.os === 'cros' && !extData.managed_attributes.managed && (
-                    <div className="bg-[#1a1400] border border-yellow-500/30 rounded-xl px-3 py-2 text-xs text-yellow-200/80">
-                      <span className="font-semibold text-yellow-400">ChromeOS detected</span> - Serial number and asset details require the extension to be force-installed via Google Admin policy on an enrolled device.
-                    </div>
-                  )
-                )}
-              </div>
-            )}
+                </>
+              )
+            })()}
+
             {/* Extension settings toggles */}
             {extSettings && extCategories && (
               <ExtensionSettingsPanel
@@ -199,7 +155,12 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Panel title="Network Speed" info={"Click the gauge to run 14 measurement steps against Cloudflare's edge.\nDownload/Upload: measures throughput in Mbps.\nLatency/Jitter: idle connection responsiveness.\nDL/UL Latency and Jitter: measured during active transfers to show real-world performance under load.\nScore: overall connection quality rating from Cloudflare.\nColor thresholds: latency green under 50ms, speed green above 25 Mbps, jitter green under 5ms."}>
-            <NetworkPanel onResult={reportResult} />
+            <NetworkPanel
+              onResult={reportResult}
+              networkInfo={extData?.network && !extData.network.error && extData.network.mac_address
+                ? { mac: extData.network.mac_address, ip: extData.network.ipv4 || null }
+                : undefined}
+            />
           </Panel>
           <Panel title="Battery Status" info={"Reads the Battery Status API for live charge level, plug state, and estimated time to full or empty.\nAuto-updates every 30 seconds and on system battery events.\nColor changes at 25% (yellow) and 10% (red).\nNot available on all browsers or desktop devices."}>
             <BatteryWidget />
@@ -219,7 +180,10 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
       {/* Stress Tests */}
       <TestGroup label="Stress Tests" index={2}>
         <Panel title="Memory Pressure" info={"Allocates memory in 16 MB chunks until the browser refuses or you click Stop.\nThe gauge shows allocation as a percentage of reported device RAM.\nGC Detected: appears if the browser reclaims memory mid-test.\nPeak allocation is shown after the test completes.\nUse Reset to return to idle."}>
-          <MemoryPanel onResult={reportResult} />
+          <MemoryPanel
+            onResult={reportResult}
+            exactRamMB={extData?.memory && !extData.memory.error ? Math.round(extData.memory.capacity_bytes / (1024 * 1024)) : undefined}
+          />
         </Panel>
 
         <Panel title="Tab Swarm" info={"Spawns Web Workers that simulate browser tabs at four weight levels: Search (8MB), Docs (24MB), Interactive (48MB), Video (64MB).\nPick a preset like Classroom Mix or Testing Day, then click Swarm.\nTabs spawn every 1.2 seconds while real-time charts track thread latency, frame rate, and JS heap memory.\nAfter all tabs open, the test runs 5 more seconds to measure sustained load.\nPeak latency under 50ms: device handled it well. Over 150ms: device struggled."}>
@@ -245,6 +209,9 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
           platform={platform}
           testResults={allTests}
           onClose={() => setShowReport(false)}
+          extData={extData}
+          extSettings={extSettings?.settings}
+          deviceNameFormat={extNameFormat}
         />
       )}
     </div>
@@ -295,14 +262,6 @@ function Panel({ title, info, children }: { title: string; info?: string; childr
   )
 }
 
-function formatExtStorage(storage: ExtensionDeviceInfo['storage']): string {
-  if (!Array.isArray(storage)) return '\u2014'
-  const items = storage as Array<{ type: string; capacity_gb: number }>
-  const fixed = items.filter(s => s.type === 'fixed')
-  if (fixed.length > 0) return fixed.map(s => `${s.capacity_gb} GB`).join(', ')
-  return items.length > 0 ? `${items[0].capacity_gb} GB` : '\u2014'
-}
-
 function cleanGPU(raw: string): string {
   return raw
     .replace(/^ANGLE \(/, '')
@@ -312,6 +271,132 @@ function cleanGPU(raw: string): string {
     .replace(/\s+\(0x[\da-fA-F]+\)/g, '')
     .replace(/^(Intel|AMD|NVIDIA),\s*/i, '')
     .trim()
+}
+
+/** Determine which baseline fields to show based on active extension categories. */
+function getBaselineFields(platform: PlatformInfo, extData: ExtensionDeviceInfo | null) {
+  const fields: Array<{ icon: React.ReactNode; label: string; value: string }> = []
+
+  fields.push({ icon: <PlatformIcon />, label: 'Platform', value: platform.os })
+  fields.push({ icon: <BrowserIcon />, label: 'Browser', value: platform.browser })
+
+  // CPU: replaced by extension CPU category
+  if (!extData?.cpu || extData.cpu.error) {
+    fields.push({
+      icon: <CpuIcon />,
+      label: 'Processor',
+      value: `${platform.cores} cores${platform.architecture ? ` \u00b7 ${platform.architecture}` : ''}`
+    })
+  }
+
+  // Memory: replaced by extension Memory category
+  if (!extData?.memory || extData.memory.error) {
+    fields.push({
+      icon: <MemoryIcon />,
+      label: 'Memory',
+      value: platform.ram ? (platform.ram >= 8 ? `\u2265${platform.ram} GB` : `${platform.ram} GB`) : '\u2014'
+    })
+  }
+
+  // Display: replaced by extension Display category
+  if (!extData?.display || (typeof extData.display === 'object' && 'error' in extData.display)) {
+    fields.push({
+      icon: <DisplayIcon />,
+      label: 'Display',
+      value: `${platform.screenWidth}\u00d7${platform.screenHeight} @${platform.pixelRatio}x`
+    })
+  }
+
+  fields.push({ icon: <ColorIcon />, label: 'Color Depth', value: `${platform.colorDepth}-bit` })
+  fields.push({ icon: <TouchIcon />, label: 'Touch', value: platform.touchSupported ? `${platform.maxTouchPoints} points` : 'None' })
+
+  if (platform.gpu) {
+    fields.push({ icon: <GpuIcon />, label: 'Graphics', value: cleanGPU(platform.gpu) })
+  }
+
+  return fields
+}
+
+/** Build extension data cards for enabled categories. */
+function getExtensionCards(extData: ExtensionDeviceInfo): Array<{ label: string; value: string; sub: string }> {
+  const cards: Array<{ label: string; value: string; sub: string }> = []
+
+  if (extData.cpu && !extData.cpu.error) {
+    const features = extData.cpu.features?.length ? extData.cpu.features.slice(0, 3).join(', ') : ''
+    cards.push({
+      label: 'CPU',
+      value: extData.cpu.model_name || `${extData.cpu.num_of_processors} cores`,
+      sub: `${extData.cpu.num_of_processors} cores${features ? ` -- ${features}` : ''}`
+    })
+  }
+
+  if (extData.memory && !extData.memory.error) {
+    cards.push({
+      label: 'Memory',
+      value: `${extData.memory.capacity_gb} GB`,
+      sub: `${Math.round(extData.memory.capacity_bytes / (1024 * 1024))} MB exact`
+    })
+  }
+
+  if (extData.storage && Array.isArray(extData.storage) && extData.storage.length > 0 && !('error' in extData.storage[0])) {
+    const items = extData.storage as Array<{ type: string; capacity_gb: number; name: string }>
+    const fixed = items.filter(s => s.type === 'fixed')
+    const primary = fixed.length > 0 ? fixed[0] : items[0]
+    cards.push({
+      label: 'Storage',
+      value: `${primary.type === 'fixed' ? 'eMMC' : primary.type} ${primary.capacity_gb} GB`,
+      sub: `${items.length} drive${items.length !== 1 ? 's' : ''}`
+    })
+  }
+
+  if (extData.display && Array.isArray(extData.display) && extData.display.length > 0) {
+    const primary = extData.display.find(d => d.is_primary) || extData.display[0]
+    const selectedMode = primary.modes?.find(m => m.is_selected)
+    const refreshRate = selectedMode?.refresh_rate ? `${Math.round(selectedMode.refresh_rate)}Hz` : ''
+    const dpi = (primary as any).dpi_x ? `${Math.round((primary as any).dpi_x)} DPI` : ''
+    cards.push({
+      label: 'Display',
+      value: `${primary.bounds.width}x${primary.bounds.height}`,
+      sub: [refreshRate, dpi].filter(Boolean).join(' -- ')
+    })
+  }
+
+  if (extData.network && !extData.network.error) {
+    cards.push({
+      label: 'Network',
+      value: extData.network.mac_address || '--',
+      sub: extData.network.ipv4 || extData.network.ipv6 || ''
+    })
+  }
+
+  if (extData.device_info && !extData.device_info.error) {
+    cards.push({
+      label: 'Device Info',
+      value: [extData.device_info.manufacturer, extData.device_info.model].filter(Boolean).join(' ') || '--',
+      sub: extData.device_info.model || ''
+    })
+  }
+
+  if (extData.managed_attributes && extData.managed_attributes.managed && !extData.managed_attributes.error) {
+    const attrs = extData.managed_attributes
+    cards.push({
+      label: 'Managed',
+      value: attrs.serial_number || attrs.asset_id || attrs.hostname || '--',
+      sub: [attrs.location, attrs.asset_id ? `#${attrs.asset_id}` : ''].filter(Boolean).join(' -- ')
+    })
+  }
+
+  return cards
+}
+
+function ExtensionCard({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="bg-[#0f1a1a] border border-[#1a3a3a] rounded-2xl p-4 transition-transform hover:scale-[1.02]">
+      <div className="text-[10px] font-bold tracking-widest text-[#40E0D0] uppercase mb-1.5">{label}</div>
+      <div className="text-sm text-gray-200 font-medium font-mono leading-tight" title={value}>{value}</div>
+      {sub && <div className="text-[11px] text-gray-500 font-mono mt-0.5">{sub}</div>}
+    </div>
+  )
 }
 
 /* Inline SVG icons */
@@ -380,66 +465,3 @@ function GpuIcon() {
   )
 }
 
-function StorageIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#40E0D0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-    </svg>
-  )
-}
-
-function ManagedIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" />
-    </svg>
-  )
-}
-
-function SerialIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 15h0M11 15h0M15 15h0" /><path d="M7 9h10" />
-    </svg>
-  )
-}
-
-function AssetIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 7h-7l-2-2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
-    </svg>
-  )
-}
-
-function HostnameIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="20" height="8" rx="2" /><rect x="2" y="14" width="20" height="8" rx="2" /><path d="M6 6h0M6 18h0" />
-    </svg>
-  )
-}
-
-function LocationIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-    </svg>
-  )
-}
-
-function DeviceIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#40E0D0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M2 17h20" /><path d="M6 21h12" />
-    </svg>
-  )
-}
-
-function NetworkIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#40E0D0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" />
-    </svg>
-  )
-}

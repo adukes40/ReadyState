@@ -10,7 +10,10 @@ import Gauge from '../components/gauge'
 
 type Status = 'idle' | 'running' | 'done'
 
-export default function MemoryPanel({ onResult }: { onResult?: (name: string, status: 'pass' | 'fail' | 'warn' | 'skipped' | 'not run', detail: string) => void }) {
+export default function MemoryPanel({ onResult, exactRamMB }: {
+  onResult?: (name: string, status: 'pass' | 'fail' | 'warn' | 'skipped' | 'not run', detail: string) => void
+  exactRamMB?: number
+}) {
   const [status, setStatus] = useState<Status>('idle')
   const [allocated, setAllocated] = useState(0)
   const [result, setResult] = useState<MemoryResult | null>(null)
@@ -45,7 +48,8 @@ export default function MemoryPanel({ onResult }: { onResult?: (name: string, st
   }, [status, result, allocated, onResult])
 
   const deviceRAM = (navigator as any).deviceMemory as number | undefined
-  const maxMB = deviceRAM ? deviceRAM * 1024 : 4096
+  const maxMB = exactRamMB || (deviceRAM ? deviceRAM * 1024 : 4096)
+  const ramLabel = exactRamMB ? `${Math.round(exactRamMB)} MB` : (deviceRAM ? `~${deviceRAM} GB` : '~4 GB')
   const pct = Math.min((allocated / maxMB) * 100, 100)
 
   return (
@@ -75,7 +79,7 @@ export default function MemoryPanel({ onResult }: { onResult?: (name: string, st
           )}
         </div>
         <div className="flex items-center gap-4 text-xs font-mono">
-          {deviceRAM && <span className="text-gray-500">Device: {deviceRAM} GB</span>}
+          <span className="text-gray-500">Device: {ramLabel}</span>
           {status !== 'idle' && (
             <span className="text-gray-200">{Math.round(allocated)} <span className="text-gray-500">MB allocated</span></span>
           )}

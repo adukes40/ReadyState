@@ -337,6 +337,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
+  if (message.type === 'GET_DEVICE_NAME_FORMAT') {
+    (async () => {
+      try {
+        const managed = await chrome.storage.managed.get([
+          'device_name_format',
+          'device_name_format_locked'
+        ]);
+        sendResponse({
+          success: true,
+          data: {
+            format: managed.device_name_format || null,
+            locked: managed.device_name_format_locked || false
+          }
+        });
+      } catch {
+        sendResponse({
+          success: true,
+          data: { format: null, locked: false }
+        });
+      }
+    })();
+    return true;
+  }
+
   if (message.type === 'PING') {
     sendResponse({ success: true, version: chrome.runtime.getManifest().version });
     return false;
@@ -385,6 +409,30 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   if (message.type === 'GET_CATEGORIES') {
     sendResponse({ success: true, data: CATEGORIES });
     return false;
+  }
+
+  if (message.type === 'GET_DEVICE_NAME_FORMAT') {
+    (async () => {
+      try {
+        const managed = await chrome.storage.managed.get([
+          'device_name_format',
+          'device_name_format_locked'
+        ]);
+        sendResponse({
+          success: true,
+          data: {
+            format: managed.device_name_format || null,
+            locked: managed.device_name_format_locked || false
+          }
+        });
+      } catch {
+        sendResponse({
+          success: true,
+          data: { format: null, locked: false }
+        });
+      }
+    })();
+    return true;
   }
 });
 

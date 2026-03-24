@@ -96,7 +96,10 @@ function bpsToMbps(bps: number): number {
   return Math.round((bps / 1_000_000) * 10) / 10
 }
 
-export default function NetworkPanel({ onResult }: { onResult?: (name: string, status: 'pass' | 'fail' | 'warn' | 'skipped' | 'not run', detail: string) => void }) {
+export default function NetworkPanel({ onResult, networkInfo }: {
+  onResult?: (name: string, status: 'pass' | 'fail' | 'warn' | 'skipped' | 'not run', detail: string) => void
+  networkInfo?: { mac: string; ip: string | null }
+}) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [result, setResult] = useState<SpeedResult>({
     latencyMs: null, jitterMs: null,
@@ -316,6 +319,11 @@ export default function NetworkPanel({ onResult }: { onResult?: (name: string, s
       )}
       {phase === 'done' && !error && (
         <div className="text-[10px] text-gray-600 font-mono mt-1">Test complete - {MEASUREMENTS.length} steps finished</div>
+      )}
+      {networkInfo && phase === 'done' && !error && (
+        <div className="text-[10px] text-gray-600 font-mono mt-1">
+          Interface: {networkInfo.mac}{networkInfo.ip ? ` / ${networkInfo.ip}` : ''}
+        </div>
       )}
     </div>
   )

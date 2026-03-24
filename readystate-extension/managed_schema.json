@@ -56,6 +56,15 @@
     "managed_attributes_locked": {
       "title": "Lock Managed Attributes setting",
       "type": "boolean"
+    },
+    "device_name_format": {
+      "title": "Device name format template for reports (e.g. {serial} -- {location})",
+      "description": "Supported variables: {serial}, {asset_id}, {location}, {hostname}, {manufacturer}, {model}. Separators around empty variables are stripped automatically.",
+      "type": "string"
+    },
+    "device_name_format_locked": {
+      "title": "Lock device name format (user cannot change)",
+      "type": "boolean"
     }
   }
 }

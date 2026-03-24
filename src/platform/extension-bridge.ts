@@ -42,6 +42,11 @@ export interface CategoryDef {
   defaultEnabled: boolean
 }
 
+export interface DeviceNameFormat {
+  format: string | null
+  locked: boolean
+}
+
 let _ready = false
 let _version: string | null = null
 const _pendingRequests = new Map<string, { resolve: (data: any) => void; reject: (err: Error) => void }>()
@@ -139,6 +144,13 @@ export function setExtensionSetting(category: string, enabled: boolean): Promise
  */
 export function getExtensionCategories(): Promise<Record<string, CategoryDef>> {
   return sendRequest('GET_CATEGORIES')
+}
+
+/**
+ * Get admin-configured device name format template and lock state.
+ */
+export function getExtensionDeviceNameFormat(): Promise<DeviceNameFormat> {
+  return sendRequest('GET_DEVICE_NAME_FORMAT')
 }
 
 export function getExtensionVersion(): string | null {

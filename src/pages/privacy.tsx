@@ -83,7 +83,11 @@ export default function PrivacyPage({ embedded }: { embedded?: boolean }) {
               The extension collects device data only. It does not access user identity,
               browsing history, files, or any personal information. Each data category can be
               individually toggled on or off by the user in the Extension Data Settings panel.
-              Administrators can lock specific categories via managed policy.
+              Administrators can lock specific categories via managed policy. Administrators can
+              also configure a device naming format via managed policy using a template such as
+              <span className="text-gray-300 font-mono text-sm mx-1">{'{serial}'} -- {'{location}'}</span>
+              that auto-fills the device name in PDF reports using device data variables. No
+              additional data is collected beyond the existing hardware categories.
             </p>
             <p>
               No data collected by the extension is transmitted to any server. All data stays in

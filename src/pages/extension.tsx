@@ -223,7 +223,9 @@ export default function ExtensionPage() {
   "network_enabled": { "Value": true },
   "network_locked": { "Value": true },
   "managed_attributes_enabled": { "Value": true },
-  "managed_attributes_locked": { "Value": true }
+  "managed_attributes_locked": { "Value": true },
+  "device_name_format": { "Value": "{serial} -- {location}" },
+  "device_name_format_locked": { "Value": true }
 }`}</pre>
             </div>
             <div className="mt-3 space-y-1.5">
@@ -238,6 +240,43 @@ export default function ExtensionPage() {
               </p>
               <p className="text-sm text-gray-500">
                 Any category not included in the policy defaults to enabled and unlocked.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-gray-300 mb-2">Device Name Format (Optional)</p>
+              <p className="text-sm text-gray-400 leading-relaxed mb-3">
+                The <span className="text-gray-300 font-mono text-xs">device_name_format</span> field
+                sets a template that auto-fills the device name in PDF reports. Use any combination
+                of the supported variables:
+              </p>
+              <div className="bg-[#0a0a0a] border border-white/10 rounded-xl overflow-hidden mb-3">
+                <div className="grid grid-cols-2 text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2 border-b border-white/5">
+                  <span>Variable</span>
+                  <span>Value inserted</span>
+                </div>
+                {[
+                  ['{serial}', 'Hardware serial number'],
+                  ['{asset_id}', 'Admin-assigned asset tag'],
+                  ['{location}', 'Admin-assigned location annotation'],
+                  ['{hostname}', 'Device hostname'],
+                  ['{manufacturer}', 'Hardware manufacturer name'],
+                  ['{model}', 'Device model name'],
+                ].map(([variable, description]) => (
+                  <div key={variable} className="grid grid-cols-2 text-xs px-4 py-2 border-b border-white/5 last:border-0">
+                    <span className="text-[#40E0D0] font-mono">{variable}</span>
+                    <span className="text-gray-500">{description}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500">
+                Example: <span className="text-gray-300 font-mono text-xs">{'"'}{'{serial}'} -- {'{location}'}{'"'}</span>{' '}
+                produces <span className="text-gray-300 font-mono text-xs">SN-2847193 -- Room 204</span> in the PDF.
+              </p>
+              <p className="text-sm text-gray-500 mt-1.5">
+                Set <span className="text-gray-300 font-mono text-xs">device_name_format_locked</span> to{' '}
+                <span className="text-gray-300">true</span> to prevent technicians from editing the
+                generated name before exporting.
               </p>
             </div>
           </Step>

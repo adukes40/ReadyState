@@ -7,6 +7,8 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { jsPDF } from 'jspdf'
 import type { PlatformInfo } from '../platform/detect'
+import type { ExtensionDeviceInfo } from '../platform/extension-bridge'
+import { resolveFormat, getAvailablePresets } from '../platform/device-name-format'
 
 export interface TestResult {
   name: string
@@ -18,6 +20,9 @@ interface ReportModalProps {
   platform: PlatformInfo
   testResults: TestResult[]
   onClose: () => void
+  extData?: ExtensionDeviceInfo | null
+  extSettings?: Record<string, boolean> | null
+  deviceNameFormat?: { format: string | null; locked: boolean } | null
 }
 
 function statusLabel(s: TestResult['status']): string {
@@ -61,11 +66,37 @@ function cleanGPU(raw: string): string {
     .trim()
 }
 
-export default function ReportModal({ platform, testResults, onClose }: ReportModalProps) {
-  const [deviceName, setDeviceName] = useState('')
+export default function ReportModal({ platform, testResults, onClose, extData, extSettings, deviceNameFormat }: ReportModalProps) {
+  const [selectedFormat, setSelectedFormat] = useState<string>(() => {
+    if (deviceNameFormat?.format) return deviceNameFormat.format
+    const stored = localStorage.getItem('readystate_name_format')
+    if (stored) return stored
+    return ''
+  })
+
+  const [deviceName, setDeviceName] = useState(() => {
+    if (deviceNameFormat?.format) {
+      return resolveFormat(deviceNameFormat.format, extData || null)
+    }
+    return ''
+  })
+
   const [notes, setNotes] = useState('')
   const [technician, setTechnician] = useState('')
   const [reportDate, setReportDate] = useState(new Date().toLocaleDateString())
+
+  const formatLocked = deviceNameFormat?.locked ?? false
+  const availablePresets = extSettings ? getAvailablePresets(extSettings) : []
+
+  const handleFormatChange = (format: string) => {
+    setSelectedFormat(format)
+    if (format) {
+      setDeviceName(resolveFormat(format, extData || null))
+      localStorage.setItem('readystate_name_format', format)
+    } else {
+      setDeviceName('')
+    }
+  }
 
   const buildPDF = () => {
     const doc = new jsPDF()
@@ -95,6 +126,74 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
     doc.setDrawColor(200)
     doc.line(margin, y, margin + contentWidth, y)
     y += 8
+
+    // Extension device info (compact 2-column layout)
+    if (extData) {
+      const extLines: Array<[string, string]> = []
+
+      if (extData.cpu && !extData.cpu.error) {
+        extLines.push(['CPU', `${extData.cpu.model_name} (${extData.cpu.num_of_processors} cores)`])
+      }
+      if (extData.memory && !extData.memory.error) {
+        extLines.push(['RAM', `${extData.memory.capacity_gb} GB`])
+      }
+      if (extData.storage && Array.isArray(extData.storage) && extData.storage.length > 0 && !('error' in extData.storage[0])) {
+        const items = extData.storage as Array<{ type: string; capacity_gb: number }>
+        const fixed = items.filter(s => s.type === 'fixed')
+        const primary = fixed.length > 0 ? fixed[0] : items[0]
+        extLines.push(['Storage', `${primary.capacity_gb} GB ${primary.type}`])
+      }
+      if (extData.display && Array.isArray(extData.display) && extData.display.length > 0) {
+        const primary = extData.display.find(d => d.is_primary) || extData.display[0]
+        const selectedMode = primary.modes?.find(m => m.is_selected)
+        const refreshRate = selectedMode?.refresh_rate ? `${Math.round(selectedMode.refresh_rate)}Hz` : ''
+        const dpi = (primary as any).dpi_x ? `${Math.round((primary as any).dpi_x)} DPI` : ''
+        const displayParts = [`${primary.bounds.width}x${primary.bounds.height}`, refreshRate, dpi].filter(Boolean)
+        extLines.push(['Display', displayParts.join(' ')])
+      }
+      if (extData.device_info && !extData.device_info.error) {
+        extLines.push(['Device', [extData.device_info.manufacturer, extData.device_info.model].filter(Boolean).join(' ')])
+      }
+      if (extData.network && !extData.network.error) {
+        if (extData.network.mac_address) extLines.push(['MAC', extData.network.mac_address])
+        if (extData.network.ipv4) extLines.push(['IPv4', extData.network.ipv4])
+      }
+      if (extData.managed_attributes?.managed && !extData.managed_attributes.error) {
+        if (extData.managed_attributes.serial_number) extLines.push(['Serial', extData.managed_attributes.serial_number])
+        if (extData.managed_attributes.location) extLines.push(['Location', extData.managed_attributes.location])
+        if (extData.managed_attributes.asset_id) extLines.push(['Asset ID', extData.managed_attributes.asset_id])
+      }
+
+      if (extLines.length > 0) {
+        const fontSize = extLines.length > 6 ? 8 : 9
+        doc.setFontSize(fontSize)
+
+        const colWidth = contentWidth / 2
+        const leftLines = extLines.slice(0, Math.ceil(extLines.length / 2))
+        const rightLines = extLines.slice(Math.ceil(extLines.length / 2))
+        const startY = y
+
+        leftLines.forEach(([label, value]) => {
+          doc.setFont('helvetica', 'bold')
+          doc.text(`${label}:`, margin + 2, y)
+          doc.setFont('helvetica', 'normal')
+          doc.text(value, margin + 30, y)
+          y += 4.5
+        })
+
+        let rightY = startY
+        rightLines.forEach(([label, value]) => {
+          doc.setFont('helvetica', 'bold')
+          doc.text(`${label}:`, margin + colWidth + 2, rightY)
+          doc.setFont('helvetica', 'normal')
+          doc.text(value, margin + colWidth + 30, rightY)
+          rightY += 4.5
+        })
+
+        y = Math.max(y, rightY)
+        y += 2
+      }
+    }
 
     // Section 1: System Summary
     doc.setFontSize(11)
@@ -264,12 +363,43 @@ export default function ReportModal({ platform, testResults, onClose }: ReportMo
           {/* Device identifier */}
           <div>
             <label className="text-xs font-bold tracking-widest text-[#40E0D0] uppercase block mb-2">Device Name / Identifier</label>
+            {(availablePresets.length > 0 || formatLocked) && (
+              <div className="mb-2">
+                <select
+                  value={selectedFormat}
+                  onChange={(e) => handleFormatChange(e.target.value)}
+                  disabled={formatLocked}
+                  className={`w-full px-3 py-2 text-xs bg-white/5 text-gray-300 rounded-lg border border-white/10 outline-none font-mono ${
+                    formatLocked ? 'opacity-60 cursor-not-allowed' : 'focus:border-[#40E0D0]/50'
+                  }`}
+                >
+                  <option value="">Custom (type below)</option>
+                  {availablePresets.map(p => (
+                    <option key={p.format} value={p.format}>{p.label}</option>
+                  ))}
+                  {formatLocked && deviceNameFormat?.format && (
+                    <option value={deviceNameFormat.format}>
+                      {deviceNameFormat.format} (admin policy)
+                    </option>
+                  )}
+                </select>
+                {formatLocked && (
+                  <p className="text-[10px] text-amber-400/70 mt-1 flex items-center gap-1">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                    Format locked by administrator
+                  </p>
+                )}
+              </div>
+            )}
             <input
               type="text"
               value={deviceName}
               onChange={(e) => setDeviceName(e.target.value)}
+              disabled={formatLocked}
               placeholder="e.g. CB-2024-0142, Room 204 Cart B"
-              className="w-full px-3 py-2.5 text-sm bg-white/5 text-gray-200 rounded-xl border border-white/10 outline-none focus:border-[#40E0D0]/50 transition-colors placeholder:text-gray-600 font-mono"
+              className={`w-full px-3 py-2.5 text-sm bg-white/5 text-gray-200 rounded-xl border border-white/10 outline-none transition-colors placeholder:text-gray-600 font-mono ${
+                formatLocked ? 'opacity-60 cursor-not-allowed' : 'focus:border-[#40E0D0]/50'
+              }`}
             />
           </div>
 
