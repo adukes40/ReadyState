@@ -2,11 +2,12 @@ import { useState, useCallback } from 'react'
 import TestRunner from './pages/test-runner'
 import TestGuide from './pages/test-guide'
 import FAQ from './pages/faq'
+import ExtensionPage from './pages/extension'
 import PrivacyPage from './pages/privacy'
 import type { TestResult } from './components/report-modal'
 import logoImg from './logo/darkmodesidebarlogo.png'
 
-type Page = 'test-runner' | 'test-guide' | 'faq' | 'privacy'
+type Page = 'test-runner' | 'test-guide' | 'faq' | 'extension' | 'privacy'
 
 const NAV_ITEMS: { page: Page; label: string; icon: React.ReactNode }[] = [
   {
@@ -38,6 +39,17 @@ const NAV_ITEMS: { page: Page; label: string; icon: React.ReactNode }[] = [
         <circle cx="12" cy="12" r="10" />
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
         <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    page: 'extension' as Page,
+    label: 'Try Our Extension',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+        <polyline points="13 2 13 9 20 9" />
+        <path d="m9 15 2 2 4-4" />
       </svg>
     ),
   },
@@ -155,6 +167,7 @@ export default function App() {
         {page === 'test-runner' && <TestRunner reportResult={reportResult} testResults={results} />}
         {page === 'test-guide' && <TestGuide />}
         {page === 'faq' && <FAQ />}
+        {page === 'extension' && <ExtensionPage />}
         {page === 'privacy' && <PrivacyPage embedded />}
       </main>
 

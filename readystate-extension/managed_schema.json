@@ -1,0 +1,61 @@
+{
+  "type": "object",
+  "properties": {
+    "device_info_enabled": {
+      "title": "Enable Device Info collection (manufacturer, model)",
+      "type": "boolean"
+    },
+    "device_info_locked": {
+      "title": "Lock Device Info setting (user cannot change)",
+      "type": "boolean"
+    },
+    "cpu_enabled": {
+      "title": "Enable CPU collection (model, cores, features)",
+      "type": "boolean"
+    },
+    "cpu_locked": {
+      "title": "Lock CPU setting",
+      "type": "boolean"
+    },
+    "memory_enabled": {
+      "title": "Enable Memory collection (total and available RAM)",
+      "type": "boolean"
+    },
+    "memory_locked": {
+      "title": "Lock Memory setting",
+      "type": "boolean"
+    },
+    "storage_enabled": {
+      "title": "Enable Storage collection (drive type and capacity)",
+      "type": "boolean"
+    },
+    "storage_locked": {
+      "title": "Lock Storage setting",
+      "type": "boolean"
+    },
+    "display_enabled": {
+      "title": "Enable Display collection (resolution, DPI, rotation)",
+      "type": "boolean"
+    },
+    "display_locked": {
+      "title": "Lock Display setting",
+      "type": "boolean"
+    },
+    "network_enabled": {
+      "title": "Enable Network collection (MAC, IPv4, IPv6)",
+      "type": "boolean"
+    },
+    "network_locked": {
+      "title": "Lock Network setting",
+      "type": "boolean"
+    },
+    "managed_attributes_enabled": {
+      "title": "Enable Managed Attributes collection (serial, asset ID, hostname, location)",
+      "type": "boolean"
+    },
+    "managed_attributes_locked": {
+      "title": "Lock Managed Attributes setting",
+      "type": "boolean"
+    }
+  }
+}

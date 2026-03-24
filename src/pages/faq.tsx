@@ -60,6 +60,30 @@ export default function FAQ() {
         />
       </CategorySection>
 
+      {/* Chrome Extension */}
+      <CategorySection title="Chrome Extension">
+        <FaqCard
+          question="What does the Chrome Extension add?"
+          answer="The extension uses privileged Chrome system APIs to provide data the browser alone cannot access: full CPU model name, exact RAM (not capped at 8 GB), storage capacity, display modes and refresh rates, and CPU temperatures on ChromeOS. When force-installed via Google Admin on an enrolled device, it also unlocks serial number, asset ID, hostname, location, manufacturer, model, and network identity (MAC, IP)."
+        />
+        <FaqCard
+          question="Why does the extension still show 'Unmanaged Chromebook'?"
+          answer="The managed device APIs (serial number, asset ID, etc.) require two things: the device must be enrolled in your Google Workspace domain, and the extension must be force-installed via Google Admin policy. Manually installing the extension from the Chrome Web Store does not grant access to these APIs. Check that the extension appears under Devices > Chrome > Apps & extensions in your Admin console with 'Force install' as the installation policy."
+        />
+        <FaqCard
+          question="Can users turn off data collection from the extension?"
+          answer="Yes. Each data category (CPU, Memory, Storage, Display, Network, etc.) can be individually toggled on or off in the Extension Data Settings panel on the Tests page. Administrators can also lock specific categories via Google Admin managed policy so they cannot be changed by users."
+        />
+        <FaqCard
+          question="Does the extension collect any personal or student information?"
+          answer="No. The extension is designed for FERPA, COPPA, and HIPAA compliance. It collects device hardware data only. It does not access user email, account information, browsing history, files, location data, or any personal identifiers. No data is transmitted to any server."
+        />
+        <FaqCard
+          question="I force-installed the extension but Manufacturer and Model are empty."
+          answer="The manufacturer and model fields require the EnterpriseHardwarePlatformAPIEnabled Chrome policy to be set to true. In Google Admin, go to Devices > Chrome > Settings > Users & browsers, search for 'Hardware Platform API', and enable it for the relevant organizational unit."
+        />
+      </CategorySection>
+
       {/* General */}
       <CategorySection title="General">
         <FaqCard

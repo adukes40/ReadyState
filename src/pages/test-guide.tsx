@@ -101,6 +101,17 @@ export default function TestGuide() {
         />
       </CategorySection>
 
+      {/* Extension Enrichment */}
+      <CategorySection title="Extension Data">
+        <TestCard
+          name="System Readout (with Extension)"
+          icon={<ExtensionIcon />}
+          what="When the ReadyState Chrome Extension is detected, the System Readout is enriched with additional hardware data from privileged Chrome APIs that browsers cannot normally access."
+          how="Install the extension via Google Admin force-install for the full dataset. The extension is automatically detected when you load the page. No manual setup is needed. Toggle individual data categories on or off using the Extension Data Settings panel below the System Readout."
+          lookFor={`With the extension installed, you should see:\n- Full CPU model name instead of just core count\n- Exact RAM in GB instead of a capped estimate\n- Storage capacity and type\n- On managed ChromeOS: serial number, asset ID, hostname, location\n- With enterprise policies: manufacturer, model, MAC address, IP address\n\nIf data is missing, check that the extension is force-installed (not manually installed) and that the device is enrolled in your Google Workspace domain.`}
+        />
+      </CategorySection>
+
       {/* Tips section */}
       <div className="bg-[#141414] rounded-2xl border border-white/5 p-6">
         <h3 className="text-sm font-bold tracking-widest text-[#40E0D0] uppercase mb-4">Tips for Best Results</h3>
@@ -281,6 +292,16 @@ function TabSwarmIcon() {
       <rect x="14" y="3" width="7" height="7" rx="1" />
       <rect x="3" y="14" width="7" height="7" rx="1" />
       <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  )
+}
+
+function ExtensionIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+      <polyline points="13 2 13 9 20 9" />
+      <path d="m9 15 2 2 4-4" />
     </svg>
   )
 }

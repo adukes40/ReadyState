@@ -27,6 +27,11 @@ export default function PrivacyPage({ embedded }: { embedded?: boolean }) {
               <DataRow label="Touch Support" detail="navigator.maxTouchPoints" />
               <DataRow label="Battery Status" detail="navigator.getBattery() - level, charging state, time estimates" />
             </div>
+            <p className="mt-3">
+              With the optional Chrome Extension installed, additional device-level data may be detected
+              (CPU model, exact RAM, storage, display modes, serial number, asset ID). See the Extension
+              page for the full list. No user identity data is collected.
+            </p>
           </Section>
 
           <Section title="What Tests Measure">
@@ -65,6 +70,26 @@ export default function PrivacyPage({ embedded }: { embedded?: boolean }) {
               <BulletItem accent text="No location data" />
               <BulletItem accent text="No tracking pixels or third-party scripts" />
             </ul>
+          </Section>
+
+          <Section title="Chrome Extension">
+            <p>
+              The optional ReadyState Chrome Extension uses privileged Chrome system APIs to surface
+              additional device hardware data such as exact RAM, full CPU model name, storage capacity,
+              and display details. When force-installed via Google Admin on an enrolled device, it can
+              also access serial numbers, asset IDs, and network identity.
+            </p>
+            <p>
+              The extension collects device data only. It does not access user identity,
+              browsing history, files, or any personal information. Each data category can be
+              individually toggled on or off by the user in the Extension Data Settings panel.
+              Administrators can lock specific categories via managed policy.
+            </p>
+            <p>
+              No data collected by the extension is transmitted to any server. All data stays in
+              the browser session and is used only to enrich the System Readout on the Tests page.
+              See the Extension page for full details on what is collected and how to deploy it.
+            </p>
           </Section>
 
           <Section title="Browser Permissions">

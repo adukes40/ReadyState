@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReadyState Device Info</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 320px;
+      min-height: 200px;
+      background: #0f1117;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+    }
+
+    .header {
+      background: #1a1d2e;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #2d3748;
+    }
+
+    .logo {
+      width: 24px;
+      height: 24px;
+      background: #2dd4bf;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 14px;
+      color: #0f1117;
+    }
+
+    .header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .header .version {
+      margin-left: auto;
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .body { padding: 14px 16px; }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #1a1d2e;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2dd4bf;
+      flex-shrink: 0;
+    }
+
+    .dot.inactive { background: #ef4444; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .info-card {
+      background: #1a1d2e;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .info-card .label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .info-card .value {
+      font-size: 13px;
+      color: #e2e8f0;
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .cta {
+      display: block;
+      text-align: center;
+      background: #2dd4bf;
+      color: #0f1117;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px;
+      border-radius: 8px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+      transition: background 0.15s;
+    }
+
+    .cta:hover { background: #5eead4; }
+
+    .managed-badge {
+      display: inline-block;
+      background: #1e3a5f;
+      color: #60a5fa;
+      border: 1px solid #2563eb;
+      border-radius: 4px;
+      font-size: 10px;
+      padding: 2px 6px;
+      margin-top: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #2d3748;
+      border-top-color: #2dd4bf;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">R</div>
+    <h1>ReadyState</h1>
+    <span class="version" id="version">v—</span>
+  </div>
+  <div class="body">
+    <div id="content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <div>Reading device info…</div>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
