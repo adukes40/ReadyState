@@ -65,7 +65,7 @@ export default function ExtensionPage() {
               { label: 'Hostname', detail: 'Device hostname configured via the DeviceHostnameTemplate policy' },
               { label: 'Location', detail: 'Admin-assigned location annotation (e.g. "Room 204", "Building C")' },
               { label: 'Directory Device ID', detail: 'Server-generated identifier from the Google Admin Directory API' },
-              { label: 'Manufacturer & Model', detail: 'Hardware manufacturer and model name via chrome.enterprise.hardwarePlatform' },
+              { label: 'OS Family & Board Name', detail: 'OS manufacturer and board identifier via chrome.enterprise.hardwarePlatform (not the device make/model)' },
               { label: 'Network Identity', detail: 'MAC address, IPv4, and IPv6 of the default network adapter' },
             ]}
           />
@@ -124,28 +124,6 @@ export default function ExtensionPage() {
           Google Admin managed policy. Locked categories cannot be changed by the user and display
           a lock indicator in the settings panel.
         </p>
-      </Section>
-
-      {/* Chrome Web Store link */}
-      <Section title="View in Chrome Web Store">
-        <p>
-          The extension is published on the Chrome Web Store for review. While you can install it
-          manually from the store, the recommended path for organizations is force-install
-          through Google Admin (see deployment guide below).
-        </p>
-        <a
-          href="https://chromewebstore.google.com/detail/readystate-device-info/igajedmfcffiplhejghgfdencfgjlcad"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 mt-2 px-4 py-2.5 rounded-xl bg-white/5 text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-            <polyline points="15 3 21 3 21 9" />
-            <line x1="10" y1="14" x2="21" y2="3" />
-          </svg>
-          View on Chrome Web Store
-        </a>
       </Section>
 
       {/* Deployment guide */}
@@ -260,8 +238,8 @@ export default function ExtensionPage() {
                   ['{asset_id}', 'Admin-assigned asset tag'],
                   ['{location}', 'Admin-assigned location annotation'],
                   ['{hostname}', 'Device hostname'],
-                  ['{manufacturer}', 'Hardware manufacturer name'],
-                  ['{model}', 'Device model name'],
+                  ['{manufacturer}', 'OS family (e.g. Google)'],
+                  ['{model}', 'Board name (not device make/model)'],
                 ].map(([variable, description]) => (
                   <div key={variable} className="grid grid-cols-2 text-xs px-4 py-2 border-b border-white/5 last:border-0">
                     <span className="text-[#40E0D0] font-mono">{variable}</span>
@@ -314,7 +292,7 @@ export default function ExtensionPage() {
           <div>
             <h3 className="text-sm font-semibold text-blue-400 mb-1">Optional: Enable Hardware Platform API</h3>
             <p className="text-sm text-blue-200/70 leading-relaxed">
-              To surface the device manufacturer and model, the{' '}
+              To surface the OS family and board name, the{' '}
               <span className="text-blue-300 font-mono text-xs">EnterpriseHardwarePlatformAPIEnabled</span>{' '}
               policy must be set to <span className="text-blue-300">true</span>. In Google Admin, go to{' '}
               <span className="text-blue-300">Devices {'>'} Chrome {'>'} Settings {'>'} Users & browsers</span>,
@@ -328,7 +306,7 @@ export default function ExtensionPage() {
       <Section title="Data Categories Reference">
         <p>These are the toggleable categories in the Extension Data Settings panel:</p>
         <div className="mt-3 space-y-2">
-          <DataRow label="Device Info" detail="Manufacturer and model name (requires force-install + EnterpriseHardwarePlatformAPIEnabled policy)" />
+          <DataRow label="Device Info" detail="OS family and board name (requires force-install + EnterpriseHardwarePlatformAPIEnabled policy)" />
           <DataRow label="CPU" detail="Processor model, core count, architecture, feature flags, thermal readings" />
           <DataRow label="Memory" detail="Total physical RAM and currently available RAM in bytes" />
           <DataRow label="Storage" detail="All storage devices with type (fixed/removable) and capacity" />

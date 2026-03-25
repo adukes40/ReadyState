@@ -26,9 +26,10 @@ import KofiButton from '../components/kofi-button'
 interface TestRunnerProps {
   reportResult: (name: string, status: TestResult['status'], detail: string) => void
   testResults: Record<string, TestResult>
+  onNavigate?: (page: string) => void
 }
 
-export default function TestRunner({ reportResult, testResults }: TestRunnerProps) {
+export default function TestRunner({ reportResult, testResults, onNavigate }: TestRunnerProps) {
   const [platform, setPlatform] = useState<PlatformInfo | null>(null)
   const [extData, setExtData] = useState<ExtensionDeviceInfo | null>(null)
   const [extSettings, setExtSettings] = useState<ExtensionSettings | null>(null)
@@ -116,6 +117,21 @@ export default function TestRunner({ reportResult, testResults }: TestRunnerProp
                 <ReadoutCard key={i} icon={f.icon} label={f.label} value={f.value} />
               ))}
             </div>
+
+            {/* Extension hint - shown when extension is not detected */}
+            {!extData && onNavigate && (
+              <button
+                onClick={() => onNavigate('extension')}
+                className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[#40E0D0]/5 border border-[#40E0D0]/10 text-[11px] text-[#40E0D0]/70 hover:text-[#40E0D0] hover:bg-[#40E0D0]/10 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                  <polyline points="13 2 13 9 20 9" />
+                  <path d="m9 15 2 2 4-4" />
+                </svg>
+                Unlock more device data with the ReadyState extension
+              </button>
+            )}
 
             {/* Extension data row(s) */}
             {extData && (() => {

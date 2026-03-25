@@ -164,7 +164,7 @@ export default function App() {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto px-4 pt-16 pb-4 md:px-6 md:py-6">
-        {page === 'test-runner' && <TestRunner reportResult={reportResult} testResults={results} />}
+        {page === 'test-runner' && <TestRunner reportResult={reportResult} testResults={results} onNavigate={(p) => setPage(p as Page)} />}
         {page === 'test-guide' && <TestGuide />}
         {page === 'faq' && <FAQ />}
         {page === 'extension' && <ExtensionPage />}
