@@ -14,12 +14,12 @@ async function renderPopup() {
     const isManaged = d.managed_attributes?.managed;
 
     const rows = [
-      { label: 'OS', value: formatOS(d.platform?.os) },
+      { label: 'OS Family', value: formatOS(d.platform?.os) },
     ];
 
     if (d.device_info) {
       if (d.device_info.manufacturer) rows.push({ label: 'Manufacturer', value: d.device_info.manufacturer });
-      if (d.device_info.model) rows.push({ label: 'Model', value: d.device_info.model });
+      if (d.device_info.model) rows.push({ label: 'Board Name', value: d.device_info.model });
     }
 
     if (d.cpu) {
@@ -51,9 +51,19 @@ async function renderPopup() {
       if (ma.location) rows.push({ label: 'Location', value: ma.location });
       managedSection = `<div class="managed-badge">\u2713 Managed Device</div>`;
     } else if (isCros && !isManaged) {
+      const ma = d.managed_attributes || {};
+      const apiAvail = ma.api_available ? 'Yes' : 'No';
+      const diagHint = ma._diag?.serial_number?.status === 'rejected'
+        ? 'API error: ' + (ma._diag.serial_number.error || 'unknown')
+        : ma._diag?.serial_number?.is_empty
+          ? 'API returned empty string (affiliation or enrollment issue)'
+          : ma.api_available === false
+            ? 'enterprise.deviceAttributes API not found on this device'
+            : 'APIs called but no data returned';
       managedSection = `<div style="background:#1a1d2e;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:#94a3b8;line-height:1.5;">
         <strong style="color:#f59e0b;">\u26A0 Unmanaged Chromebook</strong><br>
-        Serial number and asset ID require this extension to be force-installed via Google Admin on an enrolled device.
+        Serial number and asset ID require this extension to be force-installed via Google Admin on an enrolled device.<br>
+        <span style="color:#64748b;font-size:11px;">API available: ${apiAvail} | ${diagHint}</span>
       </div>`;
     }
 
@@ -114,3 +124,97 @@ function shortCPU(model) {
 }
 
 renderPopup();
+
+// Diagnostic mode - triple-click the version number to reveal
+let diagClicks = 0;
+let diagTimer = null;
+document.getElementById('version').addEventListener('click', () => {
+  diagClicks++;
+  clearTimeout(diagTimer);
+  diagTimer = setTimeout(() => { diagClicks = 0; }, 600);
+  if (diagClicks >= 3) {
+    diagClicks = 0;
+    runDiagnostics();
+  }
+});
+
+async function runDiagnostics() {
+  const existing = document.getElementById('diag-panel');
+  if (existing) { existing.remove(); return; } // toggle off
+
+  const panel = document.createElement('div');
+  panel.id = 'diag-panel';
+  panel.style.cssText = 'background:#0d1117;border-top:1px solid #2d3748;padding:12px 16px;font-size:11px;font-family:monospace;color:#94a3b8;max-height:300px;overflow-y:auto;';
+  panel.innerHTML = '<div style="color:#f59e0b;font-weight:bold;margin-bottom:8px;">DIAGNOSTICS</div><div>Running API checks...</div>';
+  document.body.appendChild(panel);
+
+  const lines = [];
+
+  // Check API availability
+  lines.push(`chrome.enterprise exists: ${!!chrome.enterprise}`);
+  lines.push(`deviceAttributes API: ${!!(chrome.enterprise && chrome.enterprise.deviceAttributes)}`);
+  lines.push(`hardwarePlatform API: ${!!(chrome.enterprise && chrome.enterprise.hardwarePlatform)}`);
+  lines.push(`networkingAttributes API: ${!!(chrome.enterprise && chrome.enterprise.networkingAttributes)}`);
+  lines.push('---');
+
+  // Test each deviceAttributes call individually
+  if (chrome.enterprise && chrome.enterprise.deviceAttributes) {
+    const calls = [
+      ['getDeviceSerialNumber', () => chrome.enterprise.deviceAttributes.getDeviceSerialNumber()],
+      ['getDirectoryDeviceId', () => chrome.enterprise.deviceAttributes.getDirectoryDeviceId()],
+      ['getDeviceAnnotatedAssetId', () => chrome.enterprise.deviceAttributes.getDeviceAnnotatedAssetId()],
+      ['getDeviceAnnotatedLocation', () => chrome.enterprise.deviceAttributes.getDeviceAnnotatedLocation()],
+      ['getDeviceHostname', () => chrome.enterprise.deviceAttributes.getDeviceHostname()],
+    ];
+
+    for (const [name, fn] of calls) {
+      try {
+        const result = await fn();
+        const type = typeof result;
+        const display = result === '' ? '(empty string)' : result === null ? '(null)' : result === undefined ? '(undefined)' : result;
+        lines.push(`${name}: ${display} [${type}]`);
+      } catch (e) {
+        lines.push(`${name}: ERROR - ${e.message}`);
+      }
+    }
+  } else {
+    lines.push('deviceAttributes API not available');
+  }
+
+  lines.push('---');
+
+  // Test hardwarePlatform
+  if (chrome.enterprise && chrome.enterprise.hardwarePlatform) {
+    try {
+      const hw = await chrome.enterprise.hardwarePlatform.getHardwarePlatformInfo();
+      lines.push(`hardwarePlatform: manufacturer="${hw.manufacturer || '(empty)'}" model="${hw.model || '(empty)'}"`);
+    } catch (e) {
+      lines.push(`hardwarePlatform: ERROR - ${e.message}`);
+    }
+  }
+
+  // Test CPU
+  try {
+    const cpu = await chrome.system.cpu.getInfo();
+    lines.push(`cpu.modelName: "${cpu.modelName || '(empty)'}"`);
+    lines.push(`cpu.archName: "${cpu.archName}"`);
+    lines.push(`cpu.numOfProcessors: ${cpu.numOfProcessors}`);
+  } catch (e) {
+    lines.push(`cpu: ERROR - ${e.message}`);
+  }
+
+  // Test storage.managed (admin policy)
+  try {
+    const managed = await chrome.storage.managed.get(null);
+    const keys = Object.keys(managed);
+    lines.push(`storage.managed keys: ${keys.length > 0 ? keys.join(', ') : '(none - no admin policy set)'}`);
+  } catch (e) {
+    lines.push(`storage.managed: ${e.message}`);
+  }
+
+  panel.innerHTML = `<div style="color:#f59e0b;font-weight:bold;margin-bottom:8px;">DIAGNOSTICS</div>` +
+    lines.map(l => l === '---'
+      ? '<hr style="border:none;border-top:1px solid #2d3748;margin:6px 0;">'
+      : `<div style="margin:3px 0;word-break:break-all;">${l}</div>`
+    ).join('');
+}

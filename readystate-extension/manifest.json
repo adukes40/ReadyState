@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ReadyState Device Info",
   "short_name": "ReadyState",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Unlocks advanced Chromebook hardware details for ReadyState - CPU, RAM, storage, and managed device info.",
   "permissions": [
     "storage",
@@ -15,8 +15,7 @@
     "enterprise.networkingAttributes"
   ],
   "host_permissions": [
-    "https://readystate.dev/*",
-    "http://localhost/*"
+    "https://readystate.dev/*"
   ],
   "background": {
     "service_worker": "src/background.js",
@@ -25,8 +24,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://readystate.dev/*",
-        "http://localhost/*"
+        "https://readystate.dev/*"
       ],
       "js": ["src/content.js"],
       "run_at": "document_idle"
@@ -48,8 +46,7 @@
   },
   "externally_connectable": {
     "matches": [
-      "https://readystate.dev/*",
-      "http://localhost/*"
+      "https://readystate.dev/*"
     ]
   },
   "storage": {

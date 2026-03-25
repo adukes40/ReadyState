@@ -323,10 +323,13 @@ function getExtensionCards(extData: ExtensionDeviceInfo): Array<{ label: string;
 
   if (extData.cpu && !extData.cpu.error) {
     const features = extData.cpu.features?.length ? extData.cpu.features.slice(0, 3).join(', ') : ''
+    const hasModel = !!extData.cpu.model_name
     cards.push({
       label: 'CPU',
-      value: extData.cpu.model_name || `${extData.cpu.num_of_processors} cores`,
-      sub: `${extData.cpu.num_of_processors} cores${features ? ` -- ${features}` : ''}`
+      value: hasModel ? extData.cpu.model_name : 'Unable to retrieve CPU name',
+      sub: hasModel
+        ? `${extData.cpu.num_of_processors} cores${features ? ` -- ${features}` : ''}`
+        : `${extData.cpu.num_of_processors} cores -- ${extData.cpu.arch_name || 'Unknown arch'}${features ? ` -- ${features}` : ''}`
     })
   }
 
@@ -370,10 +373,11 @@ function getExtensionCards(extData: ExtensionDeviceInfo): Array<{ label: string;
   }
 
   if (extData.device_info && !extData.device_info.error) {
+    const location = extData.managed_attributes?.location
     cards.push({
       label: 'Device Info',
-      value: [extData.device_info.manufacturer, extData.device_info.model].filter(Boolean).join(' ') || '--',
-      sub: extData.device_info.model || ''
+      value: location || 'No Location Set in Google',
+      sub: extData.device_info.model ? `Board Name: ${extData.device_info.model}` : '--'
     })
   }
 
@@ -381,8 +385,8 @@ function getExtensionCards(extData: ExtensionDeviceInfo): Array<{ label: string;
     const attrs = extData.managed_attributes
     cards.push({
       label: 'Managed',
-      value: attrs.serial_number || attrs.asset_id || attrs.hostname || '--',
-      sub: [attrs.location, attrs.asset_id ? `#${attrs.asset_id}` : ''].filter(Boolean).join(' -- ')
+      value: attrs.serial_number || '--',
+      sub: attrs.hostname || ''
     })
   }
 

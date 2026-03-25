@@ -68,7 +68,11 @@ export default function FAQ() {
         />
         <FaqCard
           question="Why does the extension still show 'Unmanaged Chromebook'?"
-          answer="The managed device APIs (serial number, asset ID, etc.) require two things: the device must be enrolled in your Google Workspace domain, and the extension must be force-installed via Google Admin policy. Manually installing the extension from the Chrome Web Store does not grant access to these APIs. Check that the extension appears under Devices > Chrome > Apps & extensions in your Admin console with 'Force install' as the installation policy."
+          answer="The managed device APIs (serial number, asset ID, etc.) require two things: the device must be enrolled in your Google Workspace domain, and the extension must be force-installed via Google Admin policy. Manually installing the extension from the Chrome Web Store does not grant access to these APIs. Important: if the extension is force-installed via a Google Group rather than a device-level Organizational Unit (OU), the enterprise device attributes APIs may not respond. The extension install policy is user-scoped via Groups, but serial number, asset ID, and other device attributes are device-scoped and require the policy to be applied at the OU where the device is enrolled. Move the force-install policy to the device's OU, or apply it at both the Group and OU level."
+        />
+        <FaqCard
+          question="Why does the CPU field show only core count and no model name?"
+          answer="Some ARM-based Chromebooks (common in budget and education models) do not expose the CPU model name through Chrome's system.cpu API. On these devices, the extension can only report core count and architecture (e.g., arm). This is a ChromeOS platform limitation, not an extension or ReadyState issue. Intel and AMD-based Chromebooks typically report the full CPU model."
         />
         <FaqCard
           question="Can users turn off data collection from the extension?"

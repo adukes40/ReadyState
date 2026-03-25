@@ -78,6 +78,10 @@ export default function ReportModal({ platform, testResults, onClose, extData, e
     if (deviceNameFormat?.format) {
       return resolveFormat(deviceNameFormat.format, extData || null)
     }
+    const stored = localStorage.getItem('readystate_name_format')
+    if (stored) {
+      return resolveFormat(stored, extData || null)
+    }
     return ''
   })
 

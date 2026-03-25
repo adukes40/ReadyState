@@ -214,39 +214,68 @@ async function collectNetwork() {
 }
 
 async function collectManagedAttributes() {
+  const result = {
+    managed: false,
+    api_available: false,
+    serial_number: null,
+    directory_device_id: null,
+    asset_id: null,
+    location: null,
+    hostname: null,
+    _diag: {}
+  };
+
   if (!chrome.enterprise || !chrome.enterprise.deviceAttributes) {
-    return null;
+    result._diag.api_check = 'chrome.enterprise.deviceAttributes not found';
+    return result;
   }
 
+  result.api_available = true;
+
+  // Call each API individually for detailed diagnostics
+  const calls = {
+    serial_number: () => chrome.enterprise.deviceAttributes.getDeviceSerialNumber(),
+    directory_device_id: () => chrome.enterprise.deviceAttributes.getDirectoryDeviceId(),
+    asset_id: () => chrome.enterprise.deviceAttributes.getDeviceAnnotatedAssetId(),
+    location: () => chrome.enterprise.deviceAttributes.getDeviceAnnotatedLocation(),
+    hostname: () => chrome.enterprise.deviceAttributes.getDeviceHostname()
+  };
+
+  for (const [key, fn] of Object.entries(calls)) {
+    try {
+      const value = await fn();
+      result._diag[key] = {
+        status: 'fulfilled',
+        raw_type: typeof value,
+        raw_length: typeof value === 'string' ? value.length : null,
+        is_empty: value === '',
+        is_null: value === null,
+        is_undefined: value === undefined
+      };
+      result[key] = (value && value !== '') ? value : null;
+    } catch (e) {
+      result._diag[key] = {
+        status: 'rejected',
+        error: e.message
+      };
+    }
+  }
+
+  result.managed = !!(result.serial_number || result.asset_id || result.directory_device_id || result.hostname);
+
+  // Secondary signal: check if admin policy exists via chrome.storage.managed
   try {
-    const [
-      annotatedAssetId,
-      annotatedLocation,
-      directoryDeviceId,
-      deviceSerialNumber,
-      hostname
-    ] = await Promise.allSettled([
-      chrome.enterprise.deviceAttributes.getDeviceAnnotatedAssetId(),
-      chrome.enterprise.deviceAttributes.getDeviceAnnotatedLocation(),
-      chrome.enterprise.deviceAttributes.getDirectoryDeviceId(),
-      chrome.enterprise.deviceAttributes.getDeviceSerialNumber(),
-      chrome.enterprise.deviceAttributes.getDeviceHostname()
-    ]);
-
-    const attrs = {
-      asset_id: annotatedAssetId.status === 'fulfilled' ? annotatedAssetId.value : null,
-      location: annotatedLocation.status === 'fulfilled' ? annotatedLocation.value : null,
-      directory_device_id: directoryDeviceId.status === 'fulfilled' ? directoryDeviceId.value : null,
-      serial_number: deviceSerialNumber.status === 'fulfilled' ? deviceSerialNumber.value : null,
-      hostname: hostname.status === 'fulfilled' ? hostname.value : null
-    };
-
-    const managed = !!(attrs.serial_number || attrs.asset_id || attrs.directory_device_id || attrs.hostname);
-
-    return { managed, ...attrs };
+    const stored = await chrome.storage.managed.get(null);
+    const keys = Object.keys(stored);
+    result._diag.storage_managed = { keys_found: keys.length, keys };
+    if (keys.length > 0) {
+      result._diag.policy_managed = true;
+    }
   } catch (e) {
-    return { error: 'Device not enrolled or policy not set: ' + e.message };
+    result._diag.storage_managed = { error: e.message };
   }
+
+  return result;
 }
 
 // -------------------------------------------------------

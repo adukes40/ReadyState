@@ -33,6 +33,9 @@ CLAUDE.md
 # Playwright test artifacts
 .playwright-mcp/
 
+# Superpowers plugin
+.superpowers/
+
 # Images - only allow specific production assets
 *.jpeg
 *.jpg
